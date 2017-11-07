@@ -50,10 +50,7 @@
         {
             ticket memory new_ticket;
             if (balanceOf[msg.sender] < ticketPrice) return false;
-            new_ticket.numbers[0] = number_1;
-            new_ticket.numbers[1] = number_2;
-            new_ticket.numbers[2] = number_3;
-            new_ticket.numbers[3] = number_4;
+            new_ticket.numbers = [number_1, number_2, number_3, number_4];
             require(allowable_ticket(new_ticket.numbers));
             new_ticket.owner = msg.sender;
             new_ticket.time = "06.11.2017";
