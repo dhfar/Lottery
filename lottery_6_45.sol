@@ -23,6 +23,7 @@ contract lottery_6_45 is MyAdvancedToken
         string time; //время и дата покупки билета
         uint8[13] numbers; //числа в номере - сейчас сделаем ограниченное число - точно 4 числа в билете
         uint8 compliance_level; //число совпавших номеров с выигрышной комбинацией - инициализируется нулем
+        uint8 valuable_numbers;//значащих чисел в билете - ненулевых
     }
     //структура 1го тиража лотереи
     struct lottery{
@@ -79,9 +80,9 @@ contract lottery_6_45 is MyAdvancedToken
      *@ticket_Id ноомер билета игрока
      *6.11.2017
      */
-    function getTicket(uint lottery_id,uint ticket_Id) public returns (uint8[13] ticket_numbers, uint8 ticket_prize_level)
+    function getTicket(uint lottery_id,uint ticket_Id) public returns (uint8[13] ticket_numbers, uint8 ticket_prize_level,uint8 numbers_in_ticket)
     {
-        return (lotteries[lottery_id].tickets[ticket_Id].numbers,lotteries[lottery_id].tickets[ticket_Id].compliance_level);
+        return (lotteries[lottery_id].tickets[ticket_Id].numbers,lotteries[lottery_id].tickets[ticket_Id].compliance_level,lotteries[lottery_id].tickets[ticket_Id].valuable_numbers);
     }
     
     /*Функция проведения тиража лотереи
@@ -132,7 +133,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return bool success - допустим ли такой билет
      *6.11.2017
      */
-    function allowable_ticket(uint8[13] array_to_search) internal returns (bool success)
+    /*function allowable_ticket(uint8[13] array_to_search) internal returns (bool success)
     {
         for (uint i = 0; i < 12; i++)
         {
@@ -141,7 +142,7 @@ contract lottery_6_45 is MyAdvancedToken
                 if ((array_to_search[i] == array_to_search[k]) || (array_to_search[k] == 0) || (array_to_search[k] > max_Number)) return false;
         }
         return true;
-    }
+    }*/
     
     /*Расчет размеров призов участников
      *расчитывает призы для участников и записывает размер отчислений для них в отдельный массив
@@ -176,7 +177,6 @@ contract lottery_6_45 is MyAdvancedToken
     function buy_big_ticket(uint8 number_1,uint8 number_2,uint8 number_3,uint8 number_4, uint8 number_5,uint8 number_6,uint8 number_7,uint8 number_8,uint8 number_9,uint8 number_10, uint8 number_11,uint8 number_12,uint8 number_13) public returns (bool success)
     {
         ticket memory new_ticket;
-        if (balanceOf[msg.sender] < ticketPrice) return false;
         new_ticket.numbers[0] = number_1;
         new_ticket.numbers[1] = number_2;
         new_ticket.numbers[2] = number_3;
@@ -190,25 +190,55 @@ contract lottery_6_45 is MyAdvancedToken
         new_ticket.numbers[10] = number_11;
         new_ticket.numbers[11] = number_12;
         new_ticket.numbers[12] = number_13;
-        //new_ticket.numbers = [number_1, number_2, number_3, number_4, number_5, number_6, number_7, number_8, number_9, number_10, number_11, number_12, number_13];
-        require(allowable_ticket(new_ticket.numbers));
-        new_ticket.owner = msg.sender;
-        new_ticket.time = "06.11.2017";
-        lotteries[last_lottery_id].tickets[lotteries[last_lottery_id].tickets_count] = new_ticket;
+        
+        return check_ticket_buying(new_ticket);
+    }
+    
+    /*проверка процедуры покупки билета
+     *пришлось вынести ее из-за лимитирования на использование переменных в функции - порядка 16!
+     *Создано Вопиловым А.
+     *@ticked_for_checking проверяемый билет
+     *return bool success - допустима ли покупка билета
+     *9.11.2017
+     */
+    function check_ticket_buying(ticket ticked_for_checking) internal returns (bool success)
+    {
+        if (balanceOf[msg.sender] < ticketPrice) return false;
+        var(allowability, valuable_numbers) = allowable_big_ticket(ticked_for_checking.numbers);
+        require(allowability);
+        ticked_for_checking.owner = msg.sender;
+        ticked_for_checking.time = "06.11.2017";
+        ticked_for_checking.valuable_numbers = valuable_numbers;
+        lotteries[last_lottery_id].tickets[lotteries[last_lottery_id].tickets_count] = ticked_for_checking;
         lotteries[last_lottery_id].tickets_count++;
         balanceOf[msg.sender] -= ticketPrice;
         JackPot += JackPot_assignment;
         return true;
     }
     
+    
     /*проверка на допустимость большого билета от 6 до 13 номеров в билете
+     *в нем допустимы нули, но число их не должно быть больше 7
      *Создано Вопиловым А.
+     **@ticket_numbers проверяемый билет
      *return bool success - допустим ли такой билет по своему составу чисел
+     **return uint8 numbers_in_ticket количество значащих чисел в билете - необходимо для определения его цены
      *9.11.2017
      */
-    function allowable_big_ticket()
+    function allowable_big_ticket(uint8[13] ticket_numbers) internal returns (bool, uint8 numbers_in_ticket)
     {
-        
+        numbers_in_ticket = 13;
+        if(ticket_numbers[12] == 0) numbers_in_ticket--;
+        for (uint i = 0; i < 12; i++)
+        {
+            if((ticket_numbers[i] > max_Number) || (ticket_numbers[12] > max_Number) || (numbers_in_ticket < 6)) return (false, numbers_in_ticket);
+            if(ticket_numbers[i] == 0) numbers_in_ticket--;
+            for(uint k = i + 1; k < 13; k++)
+            {
+                if ((ticket_numbers[i] == ticket_numbers[k]) && (ticket_numbers[i] != 0)) return (false, numbers_in_ticket);
+            }
+        }
+        return (true,numbers_in_ticket);
     }
     
     
