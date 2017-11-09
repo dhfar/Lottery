@@ -79,21 +79,9 @@ contract lottery_6_45 is MyAdvancedToken
      *@ticket_Id ноомер билета игрока
      *6.11.2017
      */
-    function getTicket(uint lottery_id,uint ticket_Id) public returns (ticket)
+    function getTicket(uint lottery_id,uint ticket_Id) public returns (uint8[6] ticket_numbers, uint8 ticket_prize_level)
     {
-        return lotteries[lottery_id].tickets[ticket_Id];
-    }
-    
-    /*функция проверки статуса выигрыша билета
-     *Создано Вопиловым А.
-     *@lottery_id идентификатор лотереи
-     *@ticket_Id ноомер билета игрока
-     *@return uint8 количество совпавших чисел
-     *8.11.2017
-     */
-    function getTicketPrizeStatus(uint lottery_id,uint ticket_Id) public returns (uint8)
-    {
-        return lotteries[lottery_id].tickets[ticket_Id].compliance_level;
+        return (lotteries[lottery_id].tickets[ticket_Id].numbers,lotteries[lottery_id].tickets[ticket_Id].compliance_level);
     }
     
     /*Функция проведения тиража лотереи
@@ -105,7 +93,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return bool success - успешность проведения
      *8.11.2017
      */ 
-    function finish_lottery() onlyOwner public  returns (bool success)
+    function finish_lottery() onlyOwner public returns (bool success)
     {
         //обходим все билеты в лотерее
         for (uint i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
@@ -155,5 +143,48 @@ contract lottery_6_45 is MyAdvancedToken
         return true;
     }
     
+    /*Расчет размеров призов участников
+     *расчитывает призы для участников и записывает размер отчислений для них в отдельный массив
+     *Создано Вопиловым А.
+     *return bool success - допустим ли такой билет
+     *9.11.2017
+     */
+    function calculate_prizes()
+    {
+        
+    }
+    
+    /*
+     *перенос остатков от лотереи на новую лотерею
+     *выполняются расчеты отчислений от остатка регулярного призового фонда и переносятся на основу следующего тиража
+     *Также выплачиваются дивиденды владельцам
+     *Создано Вопиловым А.
+     *return bool success - результат переноса фонда
+     *9.11.2017
+     */
+    function donate_next_lottery()
+    {
+        
+    }
+    
+    /*приобретение билета длиной от 6 до 13 номеров в билете
+     *Создано Вопиловым А.
+     *return bool success - допустима ли покупка билета
+     *9.11.2017
+     */
+    function buy_big_ticket()
+    {
+        
+    }
+    
+    /*проверка на допустимость большого билета от 6 до 13 номеров в билете
+     *Создано Вопиловым А.
+     *return bool success - допустим ли такой билет по своему составу чисел
+     *9.11.2017
+     */
+    function allowable_big_ticket()
+    {
+        
+    }
     
 }
