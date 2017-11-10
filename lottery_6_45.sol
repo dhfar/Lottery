@@ -10,9 +10,10 @@ import "./dhf_base_currency.sol";
 contract lottery_6_45 is MyAdvancedToken 
 {
     uint public JackPot = 0; //Размер Джек Пота
+    uint public regularPrize = 0; //Размер основного приза лотереи
     uint public ticketPrice = 10; // цена билета
-    uint public JackPot_assignment = 4; // размер отчислений в Джек-Пот
-    uint public regularPrize_assignment = 4; //размер отчислений в регулярный призовой фонд
+    uint public JackPot_assignment = 40; // процент отчислений в Джек-Пот от каждого билета
+    uint public regularPrize_assignment = 40; //процент отчислений в регулярный призовой фонд
     uint8 public max_Number = 45; //самое большое число, которое можно загадать в билете
     uint32 public last_lottery_id = 0; // номер последней лотереи
     uint8 public prize_combination_size = 6;//количество чисел в призовой комбинации
@@ -202,7 +203,6 @@ contract lottery_6_45 is MyAdvancedToken
      */
     function check_ticket_buying(ticket ticked_for_checking) internal returns (bool success)
     {
-        if (balanceOf[msg.sender] < ticketPrice) return false;
         var(allowability, valuable_numbers) = allowable_big_ticket(ticked_for_checking.numbers);
         require(allowability);
         ticked_for_checking.owner = msg.sender;
@@ -210,8 +210,11 @@ contract lottery_6_45 is MyAdvancedToken
         ticked_for_checking.valuable_numbers = valuable_numbers;
         lotteries[last_lottery_id].tickets[lotteries[last_lottery_id].tickets_count] = ticked_for_checking;
         lotteries[last_lottery_id].tickets_count++;
-        balanceOf[msg.sender] -= ticketPrice;
-        JackPot += JackPot_assignment;
+        uint current_ticket_price = get_ticket_price(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
+        if (balanceOf[msg.sender] < current_ticket_price) return false;
+        balanceOf[msg.sender] -= current_ticket_price;
+        JackPot += (current_ticket_price * JackPot_assignment) / 100;//в джекпот отправляется только часть средств с билета, другая часть отправляется в регулярный фонд
+        regularPrize += (current_ticket_price * JackPot_assignment) / 100;//в регулярный приз лотереи отправляется только часть средств с билета, другая часть отправляется в джек пот
         return true;
     }
     
