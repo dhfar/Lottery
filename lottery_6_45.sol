@@ -190,7 +190,6 @@ contract lottery_6_45 is MyAdvancedToken
         new_ticket.numbers[10] = number_11;
         new_ticket.numbers[11] = number_12;
         new_ticket.numbers[12] = number_13;
-        
         return check_ticket_buying(new_ticket);
     }
     
@@ -245,12 +244,28 @@ contract lottery_6_45 is MyAdvancedToken
     /*Расчет цены билета от количества номеров в нем
      *Создано Вопиловым А.
      *@number_count uint8 выбрано чисел в билете
-     *return uint256 price - результирующая цена билета
+     *return uint256 price - результирующая цена билета - рассчитывается от базовой цены билета, помноженной на число комбинаций в нем
      *9.11.2017
      */
-    /*function get_ticket_price() returns (uint256 price)
+    function get_ticket_price(uint8 number_count) public returns (uint256 price)
     {
-        
-    }*/
+        return (factorial(number_count) * ticketPrice) / (factorial(number_count - prize_combination_size) * factorial(prize_combination_size));
+    }
+    
+    /*Расчет факториала числа
+     *Создано Вопиловым А.
+     *@number uint256 число для расчета факториала
+     *return uint256 fact - значение факториала числа
+     *10.11.2017
+     */
+    function factorial(uint256 number) internal returns(uint256 fact)
+    {
+        fact = 1;
+        if(number == 0) return 1;
+        for(uint256 i = 1;i<=number;i++)
+            fact = fact * i;
+        return fact;
+    }
+    
     
 }
