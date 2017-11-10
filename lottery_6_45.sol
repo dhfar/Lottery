@@ -18,6 +18,7 @@ contract lottery_6_45 is MyAdvancedToken
     uint32 public last_lottery_id = 0; // номер последней лотереи
     uint8 public prize_combination_size = 6;//количество чисел в призовой комбинации
     uint8 public max_numbers_in_ticket = 13;//максимальное количество чисел в билете
+    uint8[3] public won_percent = [10, 30, 60];//доля регулярного выигрыша для билетов с 3, 4 и 5 совпавшими номерами в билете соответственно
     //структура билета
     struct ticket{
         address owner; //владелец билета
@@ -25,6 +26,7 @@ contract lottery_6_45 is MyAdvancedToken
         uint8[13] numbers; //числа в номере - сейчас сделаем ограниченное число - точно 4 числа в билете
         uint8 compliance_level; //число совпавших номеров с выигрышной комбинацией - инициализируется нулем
         uint8 valuable_numbers;//значащих чисел в билете - ненулевых
+        uint money;//выграно данным билетом денег
     }
     //структура 1го тиража лотереи
     struct lottery{
@@ -47,43 +49,15 @@ contract lottery_6_45 is MyAdvancedToken
         lotteries[0].prize_combination = [1,2,3,4,5,6];
     }
     
-    /*функция приобретения билета
-     *Создано Вопиловым А.
-     *3.11.2017
-     *@number_1 - первое число в билете
-     *@number_2 - второе число в билете
-     *@number_3 - третье число в билете
-     *@number_4 - четвертое число в билете
-     */
-    /*function buyTicket(uint8 number_1,uint8 number_2,uint8 number_3,uint8 number_4, uint8 number_5,uint8 number_6) public returns (bool success)
-    {
-        ticket memory new_ticket;
-        if (balanceOf[msg.sender] < ticketPrice) return false;
-        new_ticket.numbers[0] = number_1;
-        new_ticket.numbers[1] = number_2;
-        new_ticket.numbers[2] = number_3;
-        new_ticket.numbers[3] = number_4;
-        new_ticket.numbers[4] = number_5;
-        new_ticket.numbers[5] = number_6;
-        require(allowable_ticket(new_ticket.numbers));
-        new_ticket.owner = msg.sender;
-        new_ticket.time = "06.11.2017";
-        lotteries[last_lottery_id].tickets[lotteries[last_lottery_id].tickets_count] = new_ticket;
-        lotteries[last_lottery_id].tickets_count++;
-        balanceOf[msg.sender] -= ticketPrice;
-        JackPot += JackPot_assignment;
-        return true;
-    }*/
-        
     /*функция чтения билетов
      *Создано Вопиловым А.
      *@lottery_id идентификатор лотереи
      *@ticket_Id ноомер билета игрока
      *6.11.2017
      */
-    function getTicket(uint lottery_id,uint ticket_Id) public returns (uint8[13] ticket_numbers, uint8 ticket_prize_level,uint8 numbers_in_ticket)
+    function getTicket(uint lottery_id,uint ticket_Id) public view returns (uint8[13] ticket_numbers, uint8 ticket_prize_level,uint8 numbers_in_ticket,uint money)
     {
-        return (lotteries[lottery_id].tickets[ticket_Id].numbers,lotteries[lottery_id].tickets[ticket_Id].compliance_level,lotteries[lottery_id].tickets[ticket_Id].valuable_numbers);
+        return (lotteries[lottery_id].tickets[ticket_Id].numbers, lotteries[lottery_id].tickets[ticket_Id].compliance_level, lotteries[lottery_id].tickets[ticket_Id].valuable_numbers, lotteries[lottery_id].tickets[ticket_Id].money);
     }
     
     /*Функция проведения тиража лотереи
@@ -97,11 +71,7 @@ contract lottery_6_45 is MyAdvancedToken
      */ 
     function finish_lottery() onlyOwner public returns (bool success)
     {
-        //обходим все билеты в лотерее
-        for (uint i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
-        {
-            lotteries[last_lottery_id].tickets[i].compliance_level = ticket_compliance_level(lotteries[last_lottery_id].tickets[i].numbers);
-        }
+        calculate_prizes();
         return true;
     }
     
@@ -112,7 +82,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return uint compliance_level - количество совпавших номеров в билете
      *8.11.2017
      */ 
-    function ticket_compliance_level(uint8[13] ticket_numbers) internal returns (uint8 compliance_level)
+    function ticket_compliance_level(uint8[13] ticket_numbers) internal constant returns (uint8 compliance_level)
     {
         compliance_level = 0;
         for(uint i = 0; i < 13; i++)
@@ -126,34 +96,40 @@ contract lottery_6_45 is MyAdvancedToken
         return compliance_level;
     }
     
-    
-    /*Проверка на допустимость билета
-     *проверяет, повторяются ли числа в билете и вписываются ли они в диапазон от 1 до максимально допустимого номера в лотерее
-     *Создано Вопиловым А.
-     *@array_to_search массив, в котором ищем
-     *return bool success - допустим ли такой билет
-     *6.11.2017
-     */
-    /*function allowable_ticket(uint8[13] array_to_search) internal returns (bool success)
-    {
-        for (uint i = 0; i < 12; i++)
-        {
-            if((array_to_search[i] == 0) || (array_to_search[i] > max_Number)) return false;
-            for(uint k = i + 1; k < 13; k++)
-                if ((array_to_search[i] == array_to_search[k]) || (array_to_search[k] == 0) || (array_to_search[k] > max_Number)) return false;
-        }
-        return true;
-    }*/
-    
     /*Расчет размеров призов участников
      *расчитывает призы для участников и записывает размер отчислений для них в отдельный массив
      *Создано Вопиловым А.
      *return bool success - допустим ли такой билет
      *9.11.2017
      */
-    function calculate_prizes()
+    function calculate_prizes() internal returns (bool )
     {
-        
+        uint jack_pot_numbers;//сколько в тираже оказалось билетов с джекпотом
+        uint numbers_5_of_6;//сколько в тираже оказалось билетов с 5 верными номерами
+        uint numbers_4_of_6;//сколько в тираже оказалось билетов с 4 верными номерами
+        uint numbers_3_of_6;//сколько в тираже оказалось билетов с 3 верными номерами
+        //обходим все билеты в лотерее чтобы узнать, сколько каких билетов выиграло и установить им уровень выигрыша
+        for (uint i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
+        {
+            lotteries[last_lottery_id].tickets[i].compliance_level = ticket_compliance_level(lotteries[last_lottery_id].tickets[i].numbers);
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 3) numbers_3_of_6++;
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 4) numbers_4_of_6++;
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 5) numbers_5_of_6++;
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 6) jack_pot_numbers++;
+        }
+        //обходим все билеты в лотерее чтобы разделить между ними выигрыш
+        for (i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
+        {
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 3)
+                lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[0]) / (numbers_3_of_6 * 100);
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 4)
+                lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[1]) / (numbers_4_of_6 * 100);
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 5)
+                lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[2]) / (numbers_5_of_6 * 100);
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 6)
+                lotteries[last_lottery_id].tickets[i].money = JackPot / jack_pot_numbers; 
+        }
+        return true;
     }
     
     /*
@@ -164,7 +140,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return bool success - результат переноса фонда
      *9.11.2017
      */
-    function donate_next_lottery()
+    function donate_next_lottery() internal returns (bool )
     {
         
     }
@@ -227,7 +203,7 @@ contract lottery_6_45 is MyAdvancedToken
      **return uint8 numbers_in_ticket количество значащих чисел в билете - необходимо для определения его цены
      *9.11.2017
      */
-    function allowable_big_ticket(uint8[13] ticket_numbers) internal returns (bool, uint8 numbers_in_ticket)
+    function allowable_big_ticket(uint8[13] ticket_numbers) internal constant returns (bool, uint8 numbers_in_ticket)
     {
         numbers_in_ticket = 13;
         if(ticket_numbers[12] == 0) numbers_in_ticket--;
@@ -250,7 +226,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return uint256 price - результирующая цена билета - рассчитывается от базовой цены билета, помноженной на число комбинаций в нем
      *9.11.2017
      */
-    function get_ticket_price(uint8 number_count) public returns (uint256 price)
+    function get_ticket_price(uint8 number_count) public constant returns (uint256 price)
     {
         return (factorial(number_count) * ticketPrice) / (factorial(number_count - prize_combination_size) * factorial(prize_combination_size));
     }
@@ -261,7 +237,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return uint256 fact - значение факториала числа
      *10.11.2017
      */
-    function factorial(uint256 number) internal returns(uint256 fact)
+    function factorial(uint256 number) internal constant returns(uint256 fact)
     {
         fact = 1;
         if(number == 0) return 1;
