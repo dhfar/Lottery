@@ -102,12 +102,14 @@ contract lottery_6_45 is MyAdvancedToken
      *return bool success - допустим ли такой билет
      *9.11.2017
      */
-    function calculate_prizes() internal returns (bool )
+    function calculate_prizes() internal returns (bool)
     {
         uint jack_pot_numbers;//сколько в тираже оказалось билетов с джекпотом
         uint numbers_5_of_6;//сколько в тираже оказалось билетов с 5 верными номерами
         uint numbers_4_of_6;//сколько в тираже оказалось билетов с 4 верными номерами
         uint numbers_3_of_6;//сколько в тираже оказалось билетов с 3 верными номерами
+        uint regularLotteryCountedPrize;//размер распределяемого приза основной лотереи
+        uint JackPotCountedPrize;//размер распределяемого приза джек-пота
         //обходим все билеты в лотерее чтобы узнать, сколько каких билетов выиграло и установить им уровень выигрыша
         for (uint i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
         {
@@ -117,7 +119,7 @@ contract lottery_6_45 is MyAdvancedToken
             if(lotteries[last_lottery_id].tickets[i].compliance_level == 5) numbers_5_of_6++;
             if(lotteries[last_lottery_id].tickets[i].compliance_level == 6) jack_pot_numbers++;
         }
-        //обходим все билеты в лотерее чтобы разделить между ними выигрыш
+        //обходим все билеты в лотерее чтобы разделить между ними выигрыш, записываем размер выигрыша в каждый билет
         for (i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
         {
             if(lotteries[last_lottery_id].tickets[i].compliance_level == 3)
@@ -127,8 +129,15 @@ contract lottery_6_45 is MyAdvancedToken
             if(lotteries[last_lottery_id].tickets[i].compliance_level == 5)
                 lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[2]) / (numbers_5_of_6 * 100);
             if(lotteries[last_lottery_id].tickets[i].compliance_level == 6)
-                lotteries[last_lottery_id].tickets[i].money = JackPot / jack_pot_numbers; 
+                lotteries[last_lottery_id].tickets[i].money = JackPot / jack_pot_numbers;
+            if(lotteries[last_lottery_id].tickets[i].compliance_level < 6)
+                regularLotteryCountedPrize += lotteries[last_lottery_id].tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из основной лотереи
+            if(lotteries[last_lottery_id].tickets[i].compliance_level == 6)
+                JackPotCountedPrize += lotteries[last_lottery_id].tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из джек пота
+            balanceOf[lotteries[last_lottery_id].tickets[i].owner] += lotteries[last_lottery_id].tickets[i].money;//перечисление средств за выигрыш на счет победителя
         }
+        regularPrize -= regularLotteryCountedPrize;//рассчитываем остаток от основного приза
+        JackPot -= JackPotCountedPrize;//рассчитываем остаток от джек пота
         return true;
     }
     
