@@ -34,6 +34,7 @@ contract lottery_6_45 is MyAdvancedToken
         mapping(uint => ticket) tickets; //все билеты одной лотереи.
         uint tickets_count; //количество билетов в этой лотерее
         uint[6] prize_combination; //выигрышная комбинация текущего тиража лотереи
+        bool active;
     }
     mapping (uint => lottery) public lotteries;
 
@@ -47,12 +48,15 @@ contract lottery_6_45 is MyAdvancedToken
         lotteries[0].date = "06.11.2017";
         lotteries[0].tickets_count = 0;
         lotteries[0].prize_combination = [1,2,3,4,5,6];
+        lotteries[0].active = true;
     }
+    // Событие покупки билета
+    event BuyTicket(uint ticket_number, uint ticket_price, address ticket_owner, uint buy_time, uint lottery_number, string lottery_type, uint8[] ticket_numbers );
     
     /*функция чтения билетов
      *Создано Вопиловым А.
      *@lottery_id идентификатор лотереи
-     *@ticket_Id ноомер билета игрока
+     *@ticket_Id номер билета игрока
      *6.11.2017
      */
     function getTicket(uint lottery_id,uint ticket_Id) public view returns (uint8[13] ticket_numbers, uint8 ticket_prize_level,uint8 numbers_in_ticket,uint money)
@@ -71,7 +75,20 @@ contract lottery_6_45 is MyAdvancedToken
      */ 
     function finish_lottery() onlyOwner public returns (bool success)
     {
+        require(!lotteries[last_lottery_id].active);
         calculate_prizes();
+        return true;
+    }
+    
+    /*Функция смены статуса текущего тиража лотереи
+     *Создано Вопиловым А.
+     *@lottery_activity bool новый статус лотереи 
+     *return bool success - успешность проведения
+     *14.11.2017
+     */ 
+    function change_status(bool lottery_activity) onlyOwner public returns (bool success)
+    {
+        lotteries[last_lottery_id].active = lottery_activity;
         return true;
     }
     
@@ -110,30 +127,31 @@ contract lottery_6_45 is MyAdvancedToken
         uint numbers_3_of_6;//сколько в тираже оказалось билетов с 3 верными номерами
         uint regularLotteryCountedPrize;//размер распределяемого приза основной лотереи
         uint JackPotCountedPrize;//размер распределяемого приза джек-пота
+        uint8 ticketComplianceLevel; 
         //обходим все билеты в лотерее чтобы узнать, сколько каких билетов выиграло и установить им уровень выигрыша
         for (uint i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
         {
-            lotteries[last_lottery_id].tickets[i].compliance_level = ticket_compliance_level(lotteries[last_lottery_id].tickets[i].numbers);
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 3) numbers_3_of_6++;
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 4) numbers_4_of_6++;
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 5) numbers_5_of_6++;
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 6) jack_pot_numbers++;
+            ticketComplianceLevel = ticket_compliance_level(lotteries[last_lottery_id].tickets[i].numbers);
+            lotteries[last_lottery_id].tickets[i].compliance_level = ticketComplianceLevel;
+            if(ticketComplianceLevel == 3) numbers_3_of_6++;
+            if(ticketComplianceLevel == 4) numbers_4_of_6++;
+            if(ticketComplianceLevel == 5) numbers_5_of_6++;
+            if(ticketComplianceLevel == 6) jack_pot_numbers++;
         }
         //обходим все билеты в лотерее чтобы разделить между ними выигрыш, записываем размер выигрыша в каждый билет
         for (i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
         {
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 3)
+            ticketComplianceLevel = lotteries[last_lottery_id].tickets[i].compliance_level;
+            if(ticketComplianceLevel == 3)
                 lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[0]) / (numbers_3_of_6 * 100);
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 4)
+            if(ticketComplianceLevel == 4)
                 lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[1]) / (numbers_4_of_6 * 100);
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 5)
+            if(ticketComplianceLevel == 5)
                 lotteries[last_lottery_id].tickets[i].money = regularPrize * (won_percent[2]) / (numbers_5_of_6 * 100);
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 6)
+            if(ticketComplianceLevel == 6)
                 lotteries[last_lottery_id].tickets[i].money = JackPot / jack_pot_numbers;
-            if(lotteries[last_lottery_id].tickets[i].compliance_level < 6)
-                regularLotteryCountedPrize += lotteries[last_lottery_id].tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из основной лотереи
-            if(lotteries[last_lottery_id].tickets[i].compliance_level == 6)
-                JackPotCountedPrize += lotteries[last_lottery_id].tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из джек пота
+            if(ticketComplianceLevel < 6) regularLotteryCountedPrize += lotteries[last_lottery_id].tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из основной лотереи
+            if(ticketComplianceLevel == 6) JackPotCountedPrize += lotteries[last_lottery_id].tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из джек пота
             balanceOf[lotteries[last_lottery_id].tickets[i].owner] += lotteries[last_lottery_id].tickets[i].money;//перечисление средств за выигрыш на счет победителя
         }
         regularPrize -= regularLotteryCountedPrize;//рассчитываем остаток от основного приза
@@ -149,7 +167,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return bool success - результат переноса фонда
      *9.11.2017
      */
-    function donate_next_lottery() internal returns (bool )
+    function donate_next_lottery() internal returns (bool)
     {
         
     }
@@ -188,18 +206,26 @@ contract lottery_6_45 is MyAdvancedToken
      */
     function check_ticket_buying(ticket ticked_for_checking) internal returns (bool success)
     {
+        require(lotteries[last_lottery_id].active);
         var(allowability, valuable_numbers) = allowable_big_ticket(ticked_for_checking.numbers);
         require(allowability);
         ticked_for_checking.owner = msg.sender;
         ticked_for_checking.time = "06.11.2017";
         ticked_for_checking.valuable_numbers = valuable_numbers;
+        //uint current_ticket_number = lotteries[last_lottery_id].tickets_count;
         lotteries[last_lottery_id].tickets[lotteries[last_lottery_id].tickets_count] = ticked_for_checking;
         lotteries[last_lottery_id].tickets_count++;
         uint current_ticket_price = get_ticket_price(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
         if (balanceOf[msg.sender] < current_ticket_price) return false;
         balanceOf[msg.sender] -= current_ticket_price;
         JackPot += (current_ticket_price * JackPot_assignment) / 100;//в джекпот отправляется только часть средств с билета, другая часть отправляется в регулярный фонд
-        regularPrize += (current_ticket_price * JackPot_assignment) / 100;//в регулярный приз лотереи отправляется только часть средств с билета, другая часть отправляется в джек пот
+        regularPrize += (current_ticket_price * regularPrize_assignment) / 100;//в регулярный приз лотереи отправляется только часть средств с билета, другая часть отправляется в джек пот
+        /*
+        uint8[] memory temp;
+        for (uint8 i = 0; i < 13; i++ ){
+            temp[i] = ticked_for_checking.numbers[i];
+        }*/
+        //BuyTicket(current_ticket_number, current_ticket_price, msg.sender, now, last_lottery_id , "Lottery 6 45", temp);
         return true;
     }
     
@@ -246,7 +272,7 @@ contract lottery_6_45 is MyAdvancedToken
      *return uint256 fact - значение факториала числа
      *10.11.2017
      */
-    function factorial(uint256 number) internal constant returns(uint256 fact)
+    function factorial(uint256 number) internal constant returns(uint256 fact) 
     {
         fact = 1;
         if(number == 0) return 1;
