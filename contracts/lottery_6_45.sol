@@ -7,7 +7,7 @@ import "./dhf_base_currency.sol";
  *Создано Вопиловым А.
  *3.11.2017
  */
-contract lottery_6_45 is MyAdvancedToken 
+contract lottery_6_45 is dhf_base_currency 
 {
     uint public JackPot = 0; //Размер Джек Пота
     uint public regularPrize = 0; //Размер основного приза лотереи
@@ -43,7 +43,7 @@ contract lottery_6_45 is MyAdvancedToken
      *Создано Вопиловым А.
      *3.11.2017
      */
-    function lottery_6_45() MyAdvancedToken (10000, "Lottery 6 of 45", "L6x45") public
+    function lottery_6_45() dhf_base_currency (10000, "Lottery 6 of 45", "L6x45") public
     { 
         lotteries[0].date = "06.11.2017";
         lotteries[0].tickets_count = 0;
@@ -209,14 +209,13 @@ contract lottery_6_45 is MyAdvancedToken
         require(lotteries[last_lottery_id].active);
         var(allowability, valuable_numbers) = allowable_big_ticket(ticked_for_checking.numbers);
         require(allowability);
+        uint current_ticket_price = get_ticket_price(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
+        if (balanceOf[msg.sender] < current_ticket_price) return false;
         ticked_for_checking.owner = msg.sender;
         ticked_for_checking.time = "06.11.2017";
         ticked_for_checking.valuable_numbers = valuable_numbers;
-        //uint current_ticket_number = lotteries[last_lottery_id].tickets_count;
         lotteries[last_lottery_id].tickets[lotteries[last_lottery_id].tickets_count] = ticked_for_checking;
         lotteries[last_lottery_id].tickets_count++;
-        uint current_ticket_price = get_ticket_price(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
-        if (balanceOf[msg.sender] < current_ticket_price) return false;
         balanceOf[msg.sender] -= current_ticket_price;
         JackPot += (current_ticket_price * JackPot_assignment) / 100;//в джекпот отправляется только часть средств с билета, другая часть отправляется в регулярный фонд
         regularPrize += (current_ticket_price * regularPrize_assignment) / 100;//в регулярный приз лотереи отправляется только часть средств с билета, другая часть отправляется в джек пот

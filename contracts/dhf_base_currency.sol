@@ -188,7 +188,7 @@ contract TokenERC20 {
 /******************************************/
 
 //наследуем контракт от owned и erc20
-contract MyAdvancedToken is owned, TokenERC20 {
+contract dhf_base_currency is owned, TokenERC20 {
 
     uint256 public sellPrice;
     uint256 public buyPrice;
@@ -203,7 +203,7 @@ contract MyAdvancedToken is owned, TokenERC20 {
 	 * 
 	 *
 	 */
-    function MyAdvancedToken(
+    function dhf_base_currency(
         uint256 initialSupply,
         string tokenName,
         string tokenSymbol
