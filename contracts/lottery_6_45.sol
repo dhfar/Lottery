@@ -1,13 +1,13 @@
 pragma solidity ^0.4.11;
     
-import "./dhf_base_currency.sol";
+import "./DHFBaseCurrency.sol";
     
 /*смарт-контракт лотереи 4 из 20
  *4 коина идет в джек-пот, 4 - на обычные призы, 2 остается и распределяется между держателями контракта
  *Создано Вопиловым А.
  *3.11.2017
  */
-contract lottery_6_45 is dhf_base_currency 
+contract lottery_6_45 is DHFBaseCurrency 
 {
     uint public JackPot = 0; //Размер Джек Пота
     uint public regularPrize = 0; //Размер основного приза лотереи
@@ -43,7 +43,7 @@ contract lottery_6_45 is dhf_base_currency
      *Создано Вопиловым А.
      *3.11.2017
      */
-    function lottery_6_45() dhf_base_currency (10000, "Lottery 6 of 45", "L6x45") public
+    function lottery_6_45() DHFBaseCurrency (10000, "Lottery 6 of 45", "L6x45") public
     { 
         lotteries[0].date = "06.11.2017";
         lotteries[0].tickets_count = 0;
@@ -209,7 +209,7 @@ contract lottery_6_45 is dhf_base_currency
         require(lotteries[last_lottery_id].active);
         var(allowability, valuable_numbers) = allowable_big_ticket(ticked_for_checking.numbers);
         require(allowability);
-        uint current_ticket_price = get_ticket_price(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
+        uint current_ticket_price = getTicketPrice(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
         if (balanceOf[msg.sender] < current_ticket_price) return false;
         ticked_for_checking.owner = msg.sender;
         ticked_for_checking.time = "06.11.2017";
@@ -260,7 +260,7 @@ contract lottery_6_45 is dhf_base_currency
      *return uint256 price - результирующая цена билета - рассчитывается от базовой цены билета, помноженной на число комбинаций в нем
      *9.11.2017
      */
-    function get_ticket_price(uint8 number_count) public constant returns (uint256 price)
+    function getTicketPrice(uint8 number_count) public constant returns (uint256 price)
     {
         return (factorial(number_count) * ticketPrice) / (factorial(number_count - prize_combination_size) * factorial(prize_combination_size));
     }
@@ -271,7 +271,7 @@ contract lottery_6_45 is dhf_base_currency
      *return uint256 fact - значение факториала числа
      *10.11.2017
      */
-    function factorial(uint256 number) internal constant returns(uint256 fact) 
+    function factorial(uint256 number) public pure returns(uint256 fact) 
     {
         fact = 1;
         if(number == 0) return 1;

@@ -1,21 +1,21 @@
-﻿pragma solidity ^0.4.16;
+pragma solidity ^0.4.17;
 
 contract owned {
     address public owner;
 
-//конструктор класса: при СОЗДАНИИ контракта в качестве владелльца контракта прописывается его создатель
+    //конструктор класса: при СОЗДАНИИ контракта в качестве владелльца контракта прописывается его создатель
     function owned() public {
         owner = msg.sender;
     }
 
-//Модификатор - в начале функции, наследуемой от можификатора .сначала выполняется код модификатора, а затем - код самой функции
-// в этом модификаторе проверяется является ли исполнитель метода создателем контракта
+    //Модификатор - в начале функции, наследуемой от можификатора .сначала выполняется код модификатора, а затем - код самой функции
+    // в этом модификаторе проверяется является ли исполнитель метода создателем контракта
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
     }
 
-//функция для назначения нового владельца контракта - может исполняться только старым владельцем
+    //функция для назначения нового владельца контракта - может исполняться только старым владельцем
     function transferOwnership(address newOwner) onlyOwner public {
         owner = newOwner;
     }
@@ -188,7 +188,7 @@ contract TokenERC20 {
 /******************************************/
 
 //наследуем контракт от owned и erc20
-contract dhf_base_currency is owned, TokenERC20 {
+contract DHFBaseCurrency is owned, TokenERC20 {
 
     uint256 public sellPrice;
     uint256 public buyPrice;
@@ -203,7 +203,7 @@ contract dhf_base_currency is owned, TokenERC20 {
 	 * 
 	 *
 	 */
-    function dhf_base_currency(
+    function DHFBaseCurrency(
         uint256 initialSupply,
         string tokenName,
         string tokenSymbol
