@@ -68,4 +68,15 @@ contract TestTickets {
     var(allowability,qwer) = lottery.isAllowableBigTicket(nmbrs);
     Assert.isFalse(allowability, ",Билет с 13 числами и одно из них больше 45 неприемлем");
     }
+    
+    /*
+     *тестирование допустимости билета с 13ю числами, два из них больше предельного, два повторяются
+     */
+    function testisTooBigAndRepeatTicket() public{
+    lottery_6_45 lottery = new lottery_6_45();
+    uint8[13] memory nmbrs;
+    nmbrs = [64,14,23,26,49,44,6,2,3,4,5,6,7];
+    var(allowability,qwer) = lottery.isAllowableBigTicket(nmbrs);
+    Assert.isFalse(allowability, ",Билет с 13 числами и 2 из них больше допустимого, 2 повторяются неприемлем");
+    }
 }
