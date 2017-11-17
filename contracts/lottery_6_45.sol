@@ -207,7 +207,7 @@ contract lottery_6_45 is DHFBaseCurrency
     function check_ticket_buying(ticket ticked_for_checking) internal returns (bool success)
     {
         require(lotteries[last_lottery_id].active);
-        var(allowability, valuable_numbers) = allowable_big_ticket(ticked_for_checking.numbers);
+        var(allowability, valuable_numbers) = isAllowableBigTicket(ticked_for_checking.numbers);
         require(allowability);
         uint current_ticket_price = getTicketPrice(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
         if (balanceOf[msg.sender] < current_ticket_price) return false;
@@ -237,7 +237,7 @@ contract lottery_6_45 is DHFBaseCurrency
      **return uint8 numbers_in_ticket количество значащих чисел в билете - необходимо для определения его цены
      *9.11.2017
      */
-    function allowable_big_ticket(uint8[13] ticket_numbers) internal constant returns (bool, uint8 numbers_in_ticket)
+    function isAllowableBigTicket(uint8[13] ticket_numbers) public constant returns (bool, uint8 numbers_in_ticket)
     {
         numbers_in_ticket = 13;
         if(ticket_numbers[12] == 0) numbers_in_ticket--;

@@ -1,10 +1,10 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.16;
 import "truffle/Assert.sol";
 import "../contracts/lottery_6_45.sol";
 
 contract TestDHFLottery {
     /*
-     *тестирование функции факториала
+     *С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ С„СѓРЅРєС†РёРё С„Р°РєС‚РѕСЂРёР°Р»Р°
      */
     function testfactoRiality() public{
     lottery_6_45 lottery = new lottery_6_45();
@@ -13,9 +13,9 @@ contract TestDHFLottery {
     Assert.equal(lottery.factorial(2), 2, "factorial 2! = 2");
     Assert.equal(lottery.factorial(3), 6, "factorial 3! = 6");
     Assert.equal(lottery.factorial(10), 3628800, "factorial 10! = 3628800");
-  }
+    }
     /*
-     *тестирование стоимости билета
+     *С‚РµСЃС‚РёСЂРѕРІР°РЅРёРµ СЃС‚РѕРёРјРѕСЃС‚Рё Р±РёР»РµС‚Р°
      */
     function testgetTicketPrice() public{
     lottery_6_45 lottery = new lottery_6_45();
@@ -33,5 +33,5 @@ contract TestDHFLottery {
     Assert.equal(lottery.getTicketPrice(11), 4620, "");
     Assert.equal(lottery.getTicketPrice(12), 9240, "");
     Assert.equal(lottery.getTicketPrice(13), 17160, "");
-  }
+    }
 }
