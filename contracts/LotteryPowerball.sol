@@ -16,7 +16,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     uint public prizeCombinationSize = 6;//количество чисел в призовой комбинации
     uint public maxBallsInTicket = 6;//максимальное количество чисел в билете
 
-    uint8[5] public won_percent = [2, 3, 5, 15, 75];//доля регулярного выигрыша для билетов с 3, 4 и 5 совпавшими номерами в билете соответственно
+    uint8[5] public wonPercents = [2, 3, 5, 15, 75];//доля регулярного выигрыша для билетов с 3, 4 и 5 совпавшими номерами в билете соответственно
 
     uint public countWhiteBallsInTicket = 5;
 
@@ -158,15 +158,15 @@ contract LotteryPowerball is DHFBaseCurrency {
         for (i = 0; i < currentPowerballLottery.ticketsCount; i++)
         {
             if (ticketComplianceLevel[1] == 1 && (ticketComplianceLevel[0] == 0 || ticketComplianceLevel[0] == 1))
-            currentPowerballLottery.tickets[i].money = regularPrize * (won_percent[0]) / (redOrRedPlusWhite * 100);
+            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[0]) / (redOrRedPlusWhite * 100);
             if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 3)
-            currentPowerballLottery.tickets[i].money = regularPrize * (won_percent[1]) / (anyThreeBalls * 100);
+            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[1]) / (anyThreeBalls * 100);
             if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 4)
-            currentPowerballLottery.tickets[i].money = regularPrize * (won_percent[2]) / (anyFourBalls * 100);
+            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[2]) / (anyFourBalls * 100);
             if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 4)
-            currentPowerballLottery.tickets[i].money = regularPrize * (won_percent[3]) / (fourWhiteAndRed * 100);
+            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[3]) / (fourWhiteAndRed * 100);
             if (ticketComplianceLevel[1] == 0 && ticketComplianceLevel[0] == 5)
-            currentPowerballLottery.tickets[i].money = regularPrize * (won_percent[4]) / (onlyWhiteBalls * 100);
+            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[4]) / (onlyWhiteBalls * 100);
             if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 5)
             currentPowerballLottery.tickets[i].money = jackPot / jackPotBalls;
 
