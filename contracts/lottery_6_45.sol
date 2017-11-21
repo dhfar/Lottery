@@ -19,6 +19,7 @@ contract lottery_6_45 is DHFBaseCurrency
     uint8 public prize_combination_size = 6;//количество чисел в призовой комбинации
     uint8 public max_numbers_in_ticket = 13;//максимальное количество чисел в билете
     uint8[3] public won_percent = [10, 30, 60];//доля регулярного выигрыша для билетов с 3, 4 и 5 совпавшими номерами в билете соответственно
+    uint[3] public redistributionPercent = [45, 45, 10];//проценты распределения неразыгранного основного фонда лотереи: сколько остается. сколько идет в джек-пот. сколько идет создателям
     //структура билета
     struct ticket{
         address owner; //владелец билета
@@ -93,6 +94,7 @@ contract lottery_6_45 is DHFBaseCurrency
     {
         if(lotteries[last_lottery_id].active) return false;
         calculatePrizes();
+        redistributionOfRegularPrize();
         return true;
     }
     
@@ -176,16 +178,22 @@ contract lottery_6_45 is DHFBaseCurrency
     }
     
     /*
-     *перенос остатков от лотереи на новую лотерею
-     *выполняются расчеты отчислений от остатка регулярного призового фонда и переносятся на основу следующего тиража
-     *Также выплачиваются дивиденды владельцам
+     *перераспределение нераспределенных остатков регулярного розыгрыша на будущие лотереи
+     *45% нераспределенного регулярного розыгрыша остается в нем
+     *45% нераспределенного регулярного розыгрыша отправляется в джек-пот
+     *10% нераспределенного регулярного розыгрыша выплачивается аккаунту-владельцу
      *Создано Вопиловым А.
      *return bool success - результат переноса фонда
-     *9.11.2017
+     *21.11.2017
      */
-    function donateNextLottery() internal returns (bool)
+    function redistributionOfRegularPrize() internal returns (bool)
     {
-        
+        uint jackPotAdditional = regularPrize * redistributionPercent[1] / 100;//доп отчисления с остатков основного розыгрыша в джек пот
+        uint ownersAdditional = regularPrize * redistributionPercent[2] / 100;//доп отчисления с остатков основного розыгрыша в джек пот
+        regularPrize -= (jackPotAdditional + ownersAdditional);
+        JackPot += jackPotAdditional;
+        balanceOf[owner] += ownersAdditional;
+        return true;
     }
     
     /*приобретение билета длиной от 6 до 13 номеров в билете
@@ -194,8 +202,21 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - допустима ли покупка билета
      *9.11.2017
      */
-    function buyTicket(uint8 number_1,uint8 number_2,uint8 number_3,uint8 number_4, uint8 number_5,uint8 number_6,uint8 number_7,uint8 number_8,uint8 number_9,uint8 number_10, uint8 number_11,uint8 number_12,uint8 number_13) public returns (bool success)
-    {
+    function buyTicket(
+            uint8 number_1,
+            uint8 number_2,
+            uint8 number_3,
+            uint8 number_4,
+            uint8 number_5,
+            uint8 number_6,
+            uint8 number_7,
+            uint8 number_8,
+            uint8 number_9,
+            uint8 number_10,
+            uint8 number_11,
+            uint8 number_12,
+            uint8 number_13)
+        public returns (bool success){
         ticket memory new_ticket;
         new_ticket.numbers[0] = number_1;
         new_ticket.numbers[1] = number_2;
