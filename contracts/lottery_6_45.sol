@@ -64,6 +64,22 @@ contract lottery_6_45 is DHFBaseCurrency
         return (lotteries[lottery_id].tickets[ticket_Id].numbers, lotteries[lottery_id].tickets[ticket_Id].compliance_level, lotteries[lottery_id].tickets[ticket_Id].valuable_numbers, lotteries[lottery_id].tickets[ticket_Id].money);
     }
     
+    /*функция чтения Лотереи
+     *Создано Вопиловым А.
+     *@lottery_id идентификатор лотереи
+     *return @count количество билетов в лотерее
+     *21.11.2017
+     */
+    function getLottery(uint lottery_id) public view returns (
+        string date, // дата проведения лотереи
+        uint tickets_count, //количество билетов в этой лотерее
+        uint[6] prize_combination, //выигрышная комбинация текущего тиража лотереи
+        bool active
+        )
+    {
+        return (lotteries[lottery_id].date,lotteries[lottery_id].tickets_count,lotteries[lottery_id].prize_combination, lotteries[lottery_id].active);
+    }
+    
     /*Функция проведения тиража лотереи
      *пока что только записывает в каждый билет - сколько совпадений с призовой комбинацией
      *проверяет все билеты на количество угаданных номеров
@@ -73,10 +89,10 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - успешность проведения
      *8.11.2017
      */ 
-    function finish_lottery() onlyOwner public returns (bool success)
+    function finishLottery() onlyOwner public returns (bool success)
     {
-        require(!lotteries[last_lottery_id].active);
-        calculate_prizes();
+        if(lotteries[last_lottery_id].active) return false;
+        calculatePrizes();
         return true;
     }
     
@@ -86,7 +102,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - успешность проведения
      *14.11.2017
      */ 
-    function change_status(bool lottery_activity) onlyOwner public returns (bool success)
+    function changeStatus(bool lottery_activity) onlyOwner public returns (bool success)
     {
         lotteries[last_lottery_id].active = lottery_activity;
         return true;
@@ -99,7 +115,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return uint compliance_level - количество совпавших номеров в билете
      *8.11.2017
      */ 
-    function ticket_compliance_level(uint8[13] ticket_numbers) internal constant returns (uint8 compliance_level)
+    function getTicketComplianceLevel(uint8[13] ticket_numbers) internal constant returns (uint8 compliance_level)
     {
         compliance_level = 0;
         for(uint i = 0; i < 13; i++)
@@ -119,7 +135,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - допустим ли такой билет
      *9.11.2017
      */
-    function calculate_prizes() internal returns (bool)
+    function calculatePrizes() internal returns (bool)
     {
         uint jack_pot_numbers;//сколько в тираже оказалось билетов с джекпотом
         uint numbers_5_of_6;//сколько в тираже оказалось билетов с 5 верными номерами
@@ -131,7 +147,7 @@ contract lottery_6_45 is DHFBaseCurrency
         //обходим все билеты в лотерее чтобы узнать, сколько каких билетов выиграло и установить им уровень выигрыша
         for (uint i = 0; i < lotteries[last_lottery_id].tickets_count; i++)
         {
-            ticketComplianceLevel = ticket_compliance_level(lotteries[last_lottery_id].tickets[i].numbers);
+            ticketComplianceLevel = getTicketComplianceLevel(lotteries[last_lottery_id].tickets[i].numbers);
             lotteries[last_lottery_id].tickets[i].compliance_level = ticketComplianceLevel;
             if(ticketComplianceLevel == 3) numbers_3_of_6++;
             if(ticketComplianceLevel == 4) numbers_4_of_6++;
@@ -167,7 +183,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - результат переноса фонда
      *9.11.2017
      */
-    function donate_next_lottery() internal returns (bool)
+    function donateNextLottery() internal returns (bool)
     {
         
     }
@@ -178,7 +194,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - допустима ли покупка билета
      *9.11.2017
      */
-    function buy_big_ticket(uint8 number_1,uint8 number_2,uint8 number_3,uint8 number_4, uint8 number_5,uint8 number_6,uint8 number_7,uint8 number_8,uint8 number_9,uint8 number_10, uint8 number_11,uint8 number_12,uint8 number_13) public returns (bool success)
+    function buyTicket(uint8 number_1,uint8 number_2,uint8 number_3,uint8 number_4, uint8 number_5,uint8 number_6,uint8 number_7,uint8 number_8,uint8 number_9,uint8 number_10, uint8 number_11,uint8 number_12,uint8 number_13) public returns (bool success)
     {
         ticket memory new_ticket;
         new_ticket.numbers[0] = number_1;
@@ -194,7 +210,7 @@ contract lottery_6_45 is DHFBaseCurrency
         new_ticket.numbers[10] = number_11;
         new_ticket.numbers[11] = number_12;
         new_ticket.numbers[12] = number_13;
-        return check_ticket_buying(new_ticket);
+        return checkTicketBuying(new_ticket);
     }
     
     /*проверка процедуры покупки билета
@@ -204,7 +220,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return bool success - допустима ли покупка билета
      *9.11.2017
      */
-    function check_ticket_buying(ticket ticked_for_checking) internal returns (bool success)
+    function checkTicketBuying(ticket ticked_for_checking) internal returns (bool success)
     {
         if(!lotteries[last_lottery_id].active) return false;
         var(allowability, valuable_numbers) = isAllowableBigTicket(ticked_for_checking.numbers);

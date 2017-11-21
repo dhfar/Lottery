@@ -26,8 +26,8 @@ contract('lottery_6_45', function(accounts) {
     return lottery_6_45.deployed().then(function(instance) {
         lottery = instance;
         //console.log(lottery.owner())
-        //console.log(JSON.stringify(lottery.buy_big_ticket(12,23,3,4,5,6,0,0,0,0,0,0,0)));
-        return lottery.buy_big_ticket(12,23,3,4,5,6,0,0,0,0,0,0,0);
+        //console.log(JSON.stringify(lottery.buyTicket(12,23,3,4,5,6,0,0,0,0,0,0,0)));
+        return lottery.buyTicket(12,23,3,4,5,6,0,0,0,0,0,0,0);
     }).then(function(buy_ticket_result) {
         var bbres = buy_ticket_result;
         //console.log(JSON.stringify(bbres));
