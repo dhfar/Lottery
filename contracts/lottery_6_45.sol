@@ -35,7 +35,8 @@ contract lottery_6_45 is DHFBaseCurrency
         mapping(uint => ticket) tickets; //все билеты одной лотереи.
         uint tickets_count; //количество билетов в этой лотерее
         uint[6] prize_combination; //выигрышная комбинация текущего тиража лотереи
-        bool active;
+        bool active; //ведется или не ведется прием ставок
+        bool played; //проведен ли розыгрыш
     }
     mapping (uint => lottery) public lotteries;
 
@@ -50,6 +51,7 @@ contract lottery_6_45 is DHFBaseCurrency
         lotteries[0].tickets_count = 0;
         lotteries[0].prize_combination = [1,2,3,4,5,6];
         lotteries[0].active = true;
+        lotteries[0].played = false;
     }
     // Событие покупки билета
     event BuyTicket(uint ticket_number, uint ticket_price, address ticket_owner, uint buy_time, uint lottery_number, string lottery_type, uint8[] ticket_numbers );
@@ -63,6 +65,24 @@ contract lottery_6_45 is DHFBaseCurrency
     function getTicket(uint lottery_id,uint ticket_Id) public view returns (uint8[13] ticket_numbers, uint8 ticket_prize_level,uint8 numbers_in_ticket,uint money)
     {
         return (lotteries[lottery_id].tickets[ticket_Id].numbers, lotteries[lottery_id].tickets[ticket_Id].compliance_level, lotteries[lottery_id].tickets[ticket_Id].valuable_numbers, lotteries[lottery_id].tickets[ticket_Id].money);
+    }
+    
+    /*функция создания нового тиража лотереи
+     *Создано Вопиловым А.
+     *return @count количество билетов в лотерее
+     *21.11.2017
+     */
+    function newLottery() public onlyOwner returns (bool result)
+    {
+        if(lotteries[last_lottery_id].active) return false; //если предыдущая лотерея проводится, то нельзя начинать новую
+        if(!lotteries[last_lottery_id].played) return false; //если предыдущая лотерея не разыграна, то нельзя начинать новую
+        last_lottery_id++;
+        lotteries[last_lottery_id].date = "21.11.2017";
+        lotteries[last_lottery_id].tickets_count = 0;
+        lotteries[last_lottery_id].prize_combination = [0,0,0,0,0,0];
+        lotteries[last_lottery_id].active = true;
+        lotteries[last_lottery_id].played = false;
+        return true;
     }
     
     /*функция чтения Лотереи
@@ -93,8 +113,10 @@ contract lottery_6_45 is DHFBaseCurrency
     function finishLottery() onlyOwner public returns (bool success)
     {
         if(lotteries[last_lottery_id].active) return false;
+        if(lotteries[last_lottery_id].played) return false;
         calculatePrizes();
         redistributionOfRegularPrize();
+        lotteries[last_lottery_id].played = true;
         return true;
     }
     
@@ -106,6 +128,7 @@ contract lottery_6_45 is DHFBaseCurrency
      */ 
     function changeStatus(bool lottery_activity) onlyOwner public returns (bool success)
     {
+        if(lotteries[last_lottery_id].played) return false;//нельзя менять статус лотерее, которая уже разыграна
         lotteries[last_lottery_id].active = lottery_activity;
         return true;
     }
@@ -308,7 +331,7 @@ contract lottery_6_45 is DHFBaseCurrency
      *return uint256 fact - значение факториала числа
      *10.11.2017
      */
-    function factorial(uint256 number) public pure returns(uint256 fact) 
+    function factorial(uint256 number) public constant returns(uint256 fact) 
     {
         fact = 1;
         if(number == 0) return 1;
