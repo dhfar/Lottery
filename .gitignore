@@ -4,3 +4,12 @@
 .idea/modules.xml
 .idea/vcs.xml
 .idea/workspace.xml
+build/contracts/TokenERC20.json
+build/contracts/LotteryPowerball.json
+build/contracts/lottery_6_45.json
+build/contracts/DHFBaseCurrency.json
+build/contracts/tokenRecipient.json
+build/contracts/owned.json
+build/contracts/Migrations.json
+build/contracts/MetaCoin.json
+build/contracts/ConvertLib.json
