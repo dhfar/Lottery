@@ -67,17 +67,6 @@ contract lottery_6_45 is DHFBaseCurrency
         return (lotteries[lottery_id].tickets[ticket_Id].numbers, lotteries[lottery_id].tickets[ticket_Id].compliance_level, lotteries[lottery_id].tickets[ticket_Id].valuable_numbers, lotteries[lottery_id].tickets[ticket_Id].money, lotteries[lottery_id].tickets[ticket_Id].owner);
     }
     
-    /*функция чтения билета структурой
-     *Создано Вопиловым А.
-     *@lottery_id идентификатор лотереи
-     *@ticket_Id номер билета игрока
-     *23.11.2017
-     */
-    function getTicketAsStruct(uint lottery_id,uint ticket_Id) public view returns (ticket ticketGetted)
-    {
-        return (lotteries[lottery_id].tickets[ticket_Id]);
-    }
-    
     /*функция создания нового тиража лотереи
      *Создано Вопиловым А.
      *return @count количество билетов в лотерее
