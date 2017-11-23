@@ -23,7 +23,7 @@ contract TestCreateAndPlayNewLotteryFullyB {
     lottery.changeStatus(false);
     Assert.isTrue(lottery.updatePrizeCombination(1,2,3,4,5,6),"Лотерея сменила статус на неактивный, и ей можно менять призовую комбинацию");
     lottery.finishLottery();
-    var (ticket_numbers1, ticket_prize_level1,numbers_in_ticket1, money1) = lottery.getTicket(1,1);
+    var (ticket_numbers1, ticket_prize_level1,numbers_in_ticket1, money1, addr1) = lottery.getTicket(1,1);
     Assert.equal(money1,4,"Второй билет забирает 4 коина");
     }
 }

@@ -21,9 +21,10 @@ contract TestCreateAndPlayNewLotteryFullyA {
     Assert.isTrue(lottery.buyTicket(1,2,3,10,20,40,0,0,0,0,0,0,0), "Билет 1,2,3,10,20,40,0,0,0,0,0,0,0 допустим");
     Assert.isTrue(lottery.buyTicket(1,2,3,10,20,4,30,0,0,0,0,0,0), "Билет 1,2,3,10,20,4,30,0,0,0,0,0,0 допустим");
     lottery.changeStatus(false);
-    Assert.isTrue(lottery.updatePrizeCombination(1,2,3,4,5,6),"Лотерея сменила статус на неактивный, и ей можно менять призовую комбинацию");
+    //Assert.isTrue(lottery.updatePrizeCombination(1,2,3,4,5,6),"Лотерея сменила статус на неактивный, и ей можно менять призовую комбинацию");
+    lottery.updatePrizeCombination(1,2,3,4,5,6);
     lottery.finishLottery();
-    var (ticket_numbers, ticket_prize_level,numbers_in_ticket, money) = lottery.getTicket(1,0);
+    var (ticket_numbers, ticket_prize_level,numbers_in_ticket, money, addr) = lottery.getTicket(1,0);
     Assert.equal(money,46,"Первый билет забирает Джек Пот - 46 коинов");
     }
 }

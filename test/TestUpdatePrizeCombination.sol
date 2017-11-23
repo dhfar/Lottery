@@ -17,12 +17,13 @@ contract TestUpdatePrizeCombination {
     Assert.equal(lottery.regularPrize(),36, "Основной приз должен быть равен 36");
     Assert.isFalse(lottery.updatePrizeCombination(1,2,3,4,5,6),"Лотерея еще не сменила статус на неактивный, и ей нельзя менять призовую комбинацию");
     lottery.changeStatus(false);
+    Assert.isTrue(lottery.updatePrizeCombination(1,2,3,4,5,6),"Лотерея сменила статус на неактивный, и ей можно менять призовую комбинацию");
     Assert.isTrue(lottery.finishLottery(),'Лотерея активна и поэтому проведется');
-    var (ticket_numbers, ticket_prize_level,numbers_in_ticket, money) = lottery.getTicket(0,0);
+    var (ticket_numbers, ticket_prize_level,numbers_in_ticket, money, addr) = lottery.getTicket(0,0);
     Assert.equal(money,0,"никто ничего не берет, так как призовая комбинация нулевая");
-    var (ticket_numbers1, ticket_prize_level1,numbers_in_ticket1, money1) = lottery.getTicket(0,1);
-    Assert.equal(money1,0,"никто ничего не берет, так как призовая комбинация нулевая");
-    var (ticket_numbers2, ticket_prize_level2,numbers_in_ticket2, money2) = lottery.getTicket(0,2);
-    Assert.equal(money2,0,"никто ничего не берет, так как призовая комбинация нулевая");
+    (ticket_numbers, ticket_prize_level,numbers_in_ticket, money, addr) = lottery.getTicket(0,1);
+    Assert.equal(money,0,"никто ничего не берет, так как призовая комбинация нулевая");
+    (ticket_numbers, ticket_prize_level,numbers_in_ticket, money, addr) = lottery.getTicket(0,2);
+    Assert.equal(money,0,"никто ничего не берет, так как призовая комбинация нулевая");
     }
 }
