@@ -49,7 +49,7 @@ contract lottery_6_45 is DHFBaseCurrency
     { 
         lotteries[0].date = "06.11.2017";
         lotteries[0].tickets_count = 0;
-        lotteries[0].prize_combination = [1,2,3,4,5,6];
+        lotteries[0].prize_combination = [0,0,0,0,0,0];
         lotteries[0].active = true;
         lotteries[0].played = false;
     }
@@ -82,6 +82,32 @@ contract lottery_6_45 is DHFBaseCurrency
         lotteries[last_lottery_id].prize_combination = [0,0,0,0,0,0];
         lotteries[last_lottery_id].active = true;
         lotteries[last_lottery_id].played = false;
+        return true;
+    }
+    
+    /*функция перезаписи призовой комбинации
+     *Создано Вопиловым А.
+     *uint8 number_1 первый номер,
+     *uint8 number_2 второй номер,
+     *uint8 number_3 третий номер,
+     *uint8 number_4 четвертый номер,
+     *uint8 number_5 пятый номер,
+     *return @count успешность обновления комбинации
+     *22.11.2017
+     */
+    function updatePrizeCombination(
+            uint8 number_1,
+            uint8 number_2,
+            uint8 number_3,
+            uint8 number_4,
+            uint8 number_5,
+            uint8 number_6) public onlyOwner returns (bool)
+    {
+        if(lotteries[last_lottery_id].active) return false;//нельзя выполнять смену призовой комбинации, когда лотерея не переведена в статус неактивной
+        if(lotteries[last_lottery_id].played) return false;//нельзя выполнять смену призовой комбинации, когда лотерея уже разыграна
+        uint8[6] memory prizeCombinationForCheck = [number_1, number_2, number_3, number_4, number_5, number_6];
+        if(!isAllowablePrizeCombination(prizeCombinationForCheck)) return false;
+        lotteries[last_lottery_id].prize_combination = prizeCombinationForCheck;
         return true;
     }
     
@@ -311,6 +337,25 @@ contract lottery_6_45 is DHFBaseCurrency
             }
         }
         return (true,numbers_in_ticket);
+    }
+    
+    /*проверка на допустимость призовой комбинации - ровно 6 номеров в билете от 1 до 45
+     *в нем допустимы нули, но число их не должно быть больше 7
+     *Создано Вопиловым А.
+     *@prizeNumbers проверяемый билет
+     *return bool success - допустим ли такой билет по своему составу чисел
+     *22.11.2017
+     */
+    function isAllowablePrizeCombination(uint8[6] prizeNumbers) public constant returns (bool)
+    {
+        if((prizeNumbers[5] == 0) || (prizeNumbers[5] > max_Number)) return false;
+        for (uint i = 0; i < 5; i++)
+        {
+            if((prizeNumbers[i] > max_Number) || (prizeNumbers[i] == 0)) return false;
+            for(uint k = i + 1; k < 6; k++)
+                if (prizeNumbers[i] == prizeNumbers[k]) return false;
+        }
+        return true;
     }
     
     
