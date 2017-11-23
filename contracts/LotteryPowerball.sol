@@ -4,8 +4,6 @@ import "./DHFBaseCurrency.sol";
 
 contract LotteryPowerball is DHFBaseCurrency {
 
-    bool isRunning = false;
-
     uint public jackPot = 0; //Размер Джек Пота
     uint public regularPrize = 0; //Размер основного приза лотереи
     uint public ticketPrice = 40; // цена билета
@@ -37,10 +35,12 @@ contract LotteryPowerball is DHFBaseCurrency {
     mapping (uint => PowerballTicket) tickets; //все билеты одной лотереи.
     uint ticketsCount; //количество билетов в этой лотерее
     uint[6] prizeCombination; // выигрышная комбинация текущего тиража лотереи
+    bool active; //ведется или не ведется прием ставок
+    bool played; //проведен ли розыгрыш
     }
     // история розыгрышей
     mapping (uint => PowerballLottery) public historyPowerballLotteries;
-    // текущий розыгрыш 
+    // текущий розыгрыш
     PowerballLottery currentPowerballLottery;
     // конструктор контракта
     function LotteryPowerball() DHFBaseCurrency(10000, "Lottery Powerball", "LP") public {
@@ -48,23 +48,26 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
     // старт лотереи
     function startLottery() public onlyOwner {
-        isRunning = true;
         ++lastLotteryId;
         currentPowerballLottery.date = "16.11.2017";
         currentPowerballLottery.ticketsCount = 0;
         currentPowerballLottery.prizeCombination = [1, 22, 34, 47, 58, 1];
-
+        currentPowerballLottery.active = true;
+        currentPowerballLottery.played = false;
     }
     // завершение лотереи
     function stopLottery() public onlyOwner {
-        isRunning = false;
-        require(calculatePrizes());
+        currentPowerballLottery.active = false;
+        if (!calculatePrizes()) return;
+        currentPowerballLottery.played = true;
         historyPowerballLotteries[lastLotteryId] = currentPowerballLottery;
     }
     // Функция проверки текущего состояния лотереи
     function isRunningLottery() public view returns (bool res) {
-        require(isRunning);
-        return true;
+        if(currentPowerballLottery.active && !currentPowerballLottery.played) {
+            return true;
+        }
+        return false;
     }
 
     // Покупка билета(публичкая функция)
@@ -81,8 +84,8 @@ contract LotteryPowerball is DHFBaseCurrency {
 
     // Покупка билета
     function buyTicket(uint[6] ballsInTicket) private returns (bool res) {
-        require(isRunningLottery());
-        require(validationBallsInTicket(ballsInTicket));
+        if (!isRunningLottery()) return false;
+        if (!validationBallsInTicket(ballsInTicket)) return false;
 
         PowerballTicket memory newTicket;
         newTicket.owner = msg.sender;
@@ -127,7 +130,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     // расчет выигрыша
     function calculatePrizes() public onlyOwner returns (bool)
     {
-        require(!isRunningLottery());
+        if (isRunningLottery()) return false;
         // ТУТ БУДУТ ПРИЗЫ
 
         uint redOrRedPlusWhite; // Красный шар или красный + белый
@@ -178,5 +181,27 @@ contract LotteryPowerball is DHFBaseCurrency {
         regularPrize -= regularLotteryCountedPrize;//рассчитываем остаток от основного приза
         jackPot -= jackPotCountedPrize;//рассчитываем остаток от джек пота
         return true;
+    }
+
+    // Получение информации о билете
+    function getTicket(uint lotteryId, uint ticketId) public view returns (address owner, string time, uint[6] balls, uint money) {
+        PowerballTicket memory ticket;
+        if (lotteryId == lastLotteryId){
+            ticket = currentPowerballLottery.tickets[ticketId];
+        } else {
+            ticket = historyPowerballLotteries[lotteryId].tickets[ticketId];
+        }
+        return (ticket.owner, ticket.time, ticket.balls, ticket.money);
+    }
+
+    // Получение информации о лотерее
+    function getLottery(uint lotteryId) public view returns (string date, uint ticketsCount, uint[6] prizeCombination ) {
+        PowerballLottery memory lottery;
+        if (lotteryId == lastLotteryId){
+            lottery = currentPowerballLottery;
+        } else {
+            lottery = historyPowerballLotteries[lotteryId];
+        }
+        return (lottery.date, lottery.ticketsCount, lottery.prizeCombination);
     }
 }
