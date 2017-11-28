@@ -7,8 +7,8 @@ contract LotteryPowerball is DHFBaseCurrency {
     uint public jackPot = 0; //Размер Джек Пота
     uint public regularPrize = 0; //Размер основного приза лотереи
     uint public ticketPrice = 40; // цена билета
-    uint public jackPotAssignment = 40; // процент отчислений в Джек-Пот от каждого билета
-    uint public regularPrizeAssignment = 40; //процент отчислений в регулярный призовой фонд
+    //uint public jackPotAssignment = 40; // процент отчислений в Джек-Пот от каждого билета
+    //uint public regularPrizeAssignment = 40; //процент отчислений в регулярный призовой фонд
     uint public maxWhiteBallNumberInTicket = 69; //самое большое число, которое можно загадать в билете
     uint public maxRedBallNumberInTicket = 26; //самое большое число, которое можно загадать в билете
     uint public prizeCombinationSize = 6;//количество чисел в призовой комбинации
@@ -41,29 +41,60 @@ contract LotteryPowerball is DHFBaseCurrency {
     // история розыгрышей
     mapping (uint => PowerballLottery) public historyPowerballLotteries;
     // текущий розыгрыш
-    PowerballLottery currentPowerballLottery;
+    PowerballLottery public currentPowerballLottery;
     // конструктор контракта
-    function LotteryPowerball() DHFBaseCurrency(10000, "Lottery Powerball", "LP") public {
-        startLottery();
+    function LotteryPowerball() DHFBaseCurrency(110000, "Lottery Powerball", "LP") public {
+        //startLottery(100000, 10000);
     }
     // старт лотереи
-    function startLottery() public onlyOwner {
+    function startLottery(uint jackPotLottery, uint regularPrizeLottery) public onlyOwner returns (bool res)  {
+        if (!(jackPotLottery > 0 && regularPrizeLottery > 0 && jackPotLottery > regularPrizeLottery)) return false;
+
+        jackPot += jackPotLottery;
+        regularPrize = regularPrizeLottery;
+
         ++lastLotteryId;
         currentPowerballLottery.date = "16.11.2017";
         currentPowerballLottery.ticketsCount = 0;
-        currentPowerballLottery.prizeCombination = [1, 22, 34, 47, 58, 1];
+        currentPowerballLottery.prizeCombination = [0, 0, 0, 0, 0, 0];
         currentPowerballLottery.active = true;
         currentPowerballLottery.played = false;
+
+        return true;
     }
     // завершение лотереи
-    function stopLottery() public onlyOwner {
+    function stopLottery() public onlyOwner returns (bool res) {
+        if (!currentPowerballLottery.active) return false;
         currentPowerballLottery.active = false;
-        if (!calculatePrizes()) return;
+        currentPowerballLottery.played = true;
+
+        return true;
+    }
+
+    function finishLottery()  public onlyOwner returns (bool res) {
+        if (!calculatePrizes()) return false;
         currentPowerballLottery.played = true;
         historyPowerballLotteries[lastLotteryId] = currentPowerballLottery;
+        return true;
     }
+
+    function setPrizeCombination(uint firstWhiteBall, uint secondWhiteBall, uint thirdWhiteBall, uint fourthWhiteBall, uint fiveWhiteBall, uint redBall) public onlyOwner returns (bool res) {
+        if(currentPowerballLottery.active || !currentPowerballLottery.played) return false;
+        uint[6] memory balls;
+        balls[0] = firstWhiteBall;
+        balls[1] = secondWhiteBall;
+        balls[2] = thirdWhiteBall;
+        balls[3] = fourthWhiteBall;
+        balls[4] = fiveWhiteBall;
+        balls[5] = redBall;
+        if (!validationBallsInTicket(balls)) return false;
+        currentPowerballLottery.prizeCombination = balls;
+        return true;
+    }
+
+
     // Функция проверки текущего состояния лотереи
-    function isRunningLottery() public view returns (bool res) {
+    function isRunningLottery() public constant returns (bool res) {
         if(currentPowerballLottery.active && !currentPowerballLottery.played) {
             return true;
         }
@@ -94,8 +125,8 @@ contract LotteryPowerball is DHFBaseCurrency {
 
         if (balanceOf[msg.sender] < ticketPrice) return false;
         balanceOf[msg.sender] -= ticketPrice;
-        jackPot += (ticketPrice * jackPotAssignment) / 100;
-        regularPrize += (ticketPrice * regularPrizeAssignment) / 100;
+        // jackPot += (ticketPrice * jackPotAssignment) / 100;
+        // regularPrize += (ticketPrice * regularPrizeAssignment) / 100;
 
         currentPowerballLottery.tickets[currentPowerballLottery.ticketsCount] = newTicket;
         currentPowerballLottery.ticketsCount++;
@@ -104,7 +135,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     // Валидация чисел в билете
-    function validationBallsInTicket(uint[6] ballsInTicket) public view returns (bool) {
+    function validationBallsInTicket(uint[6] ballsInTicket) public constant returns (bool) {
 
         for (uint i = 0; i < countWhiteBallsInTicket; i++) {
             if (ballsInTicket[i] > maxWhiteBallNumberInTicket || ballsInTicket[i] == 0) return false;
@@ -184,7 +215,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     // Получение информации о билете
-    function getTicket(uint lotteryId, uint ticketId) public view returns (address owner, string time, uint[6] balls, uint money) {
+    function getTicket(uint lotteryId, uint ticketId) public constant returns (address owner, string time, uint[6] balls, uint money) {
         PowerballTicket memory ticket;
         if (lotteryId == lastLotteryId){
             ticket = currentPowerballLottery.tickets[ticketId];
@@ -195,7 +226,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     // Получение информации о лотерее
-    function getLottery(uint lotteryId) public view returns (string date, uint ticketsCount, uint[6] prizeCombination ) {
+    function getLottery(uint lotteryId) public constant returns (string date, uint ticketsCount, uint[6] prizeCombination ) {
         PowerballLottery memory lottery;
         if (lotteryId == lastLotteryId){
             lottery = currentPowerballLottery;
