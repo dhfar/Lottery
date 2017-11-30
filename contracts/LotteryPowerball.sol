@@ -14,10 +14,10 @@ contract LotteryPowerball is DHFBaseCurrency {
     uint public prizeCombinationSize = 6;//количество чисел в призовой комбинации
     uint public maxBallsInTicket = 6;//максимальное количество чисел в билете
 
-    uint8[5] public wonPercents = [2, 3, 5, 15, 75];//доля регулярного выигрыша для билетов с 3, 4 и 5 совпавшими номерами в билете соответственно
+    uint[5] public wonPercents = [2, 3, 5, 15, 75];//доля регулярного выигрыша для билетов с 3, 4 и 5 совпавшими номерами в билете соответственно
+
 
     uint public countWhiteBallsInTicket = 5;
-
     uint public countRedBallsInTicket = 1;
 
     uint32 public lastLotteryId = 0; // номер последней лотереи
@@ -37,6 +37,8 @@ contract LotteryPowerball is DHFBaseCurrency {
     uint[6] prizeCombination; // выигрышная комбинация текущего тиража лотереи
     bool active; //ведется или не ведется прием ставок
     bool played; //проведен ли розыгрыш
+    uint[6] countTicketWithPrizeCombinations; // количество билетов с призовыми комбинациями
+    bool isSetCountPrizeCombinations;
     }
     // история розыгрышей
     mapping (uint => PowerballLottery) public historyPowerballLotteries;
@@ -72,7 +74,8 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     function finishLottery()  public onlyOwner returns (bool res) {
-        if (!calculatePrizes()) return false;
+        if (isRunningLottery()) return false;
+        //if (!calculatePrizes()) return false;
         currentPowerballLottery.played = true;
         historyPowerballLotteries[lastLotteryId] = currentPowerballLottery;
         return true;
@@ -159,60 +162,60 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     // расчет выигрыша
-    function calculatePrizes() public onlyOwner returns (bool)
-    {
-        if (isRunningLottery()) return false;
-        // ТУТ БУДУТ ПРИЗЫ
-
-        uint redOrRedPlusWhite; // Красный шар или красный + белый
-        uint anyThreeBalls; // Любые 3 шара
-        uint anyFourBalls; // Любые 4 шара
-        uint fourWhiteAndRed; // 4 белых + красный
-        uint onlyWhiteBalls; // 5 белых
-        uint jackPotBalls; // 5 + 1
-
-        uint regularLotteryCountedPrize;//размер распределяемого приза основной лотереи
-        uint jackPotCountedPrize;//размер распределяемого приза джек-пота
-
-        uint[2] memory ticketComplianceLevel;
-
-        for (uint i = 0; i < currentPowerballLottery.ticketsCount; i++)
-        {
-            ticketComplianceLevel = getTicketComplianceLevel(currentPowerballLottery.tickets[i].balls);
-            currentPowerballLottery.tickets[i].complianceLevel = ticketComplianceLevel;
-
-            if (ticketComplianceLevel[1] == 1 && (ticketComplianceLevel[0] == 0 || ticketComplianceLevel[0] == 1)) redOrRedPlusWhite++;
-            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 3) anyThreeBalls++;
-            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 4) anyFourBalls++;
-            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 4) fourWhiteAndRed++;
-            if (ticketComplianceLevel[1] == 0 && ticketComplianceLevel[0] == 5) onlyWhiteBalls++;
-            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 5) jackPotBalls++;
-        }
-
-        for (i = 0; i < currentPowerballLottery.ticketsCount; i++)
-        {
-            if (ticketComplianceLevel[1] == 1 && (ticketComplianceLevel[0] == 0 || ticketComplianceLevel[0] == 1))
-            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[0]) / (redOrRedPlusWhite * 100);
-            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 3)
-            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[1]) / (anyThreeBalls * 100);
-            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 4)
-            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[2]) / (anyFourBalls * 100);
-            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 4)
-            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[3]) / (fourWhiteAndRed * 100);
-            if (ticketComplianceLevel[1] == 0 && ticketComplianceLevel[0] == 5)
-            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[4]) / (onlyWhiteBalls * 100);
-            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 5)
-            currentPowerballLottery.tickets[i].money = jackPot / jackPotBalls;
-
-            if(ticketComplianceLevel[0] + ticketComplianceLevel[1] < 6) regularLotteryCountedPrize += currentPowerballLottery.tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из основной лотереи
-            if(ticketComplianceLevel[0] + ticketComplianceLevel[1] == 6) jackPotCountedPrize += currentPowerballLottery.tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из джек пота
-            balanceOf[currentPowerballLottery.tickets[i].owner] += currentPowerballLottery.tickets[i].money;//перечисление средств за выигрыш на счет победителя
-        }
-
-        regularPrize -= regularLotteryCountedPrize;//рассчитываем остаток от основного приза
-        jackPot -= jackPotCountedPrize;//рассчитываем остаток от джек пота
-        return true;
-    }
+//    function calculatePrizes() public onlyOwner returns (bool)
+//    {
+//        if (isRunningLottery()) return false;
+//        // ТУТ БУДУТ ПРИЗЫ
+//
+//        uint redOrRedPlusWhite; // Красный шар или красный + белый
+//        uint anyThreeBalls; // Любые 3 шара
+//        uint anyFourBalls; // Любые 4 шара
+//        uint fourWhiteAndRed; // 4 белых + красный
+//        uint onlyWhiteBalls; // 5 белых
+//        uint jackPotBalls; // 5 + 1
+//
+//        uint regularLotteryCountedPrize;//размер распределяемого приза основной лотереи
+//        uint jackPotCountedPrize;//размер распределяемого приза джек-пота
+//
+//        uint[2] memory ticketComplianceLevel;
+//
+//        for (uint i = 0; i < currentPowerballLottery.ticketsCount; i++)
+//        {
+//            ticketComplianceLevel = getTicketComplianceLevel(currentPowerballLottery.tickets[i].balls);
+//            currentPowerballLottery.tickets[i].complianceLevel = ticketComplianceLevel;
+//
+//            if (ticketComplianceLevel[1] == 1 && (ticketComplianceLevel[0] == 0 || ticketComplianceLevel[0] == 1)) redOrRedPlusWhite++;
+//            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 3) anyThreeBalls++;
+//            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 4) anyFourBalls++;
+//            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 4) fourWhiteAndRed++;
+//            if (ticketComplianceLevel[1] == 0 && ticketComplianceLevel[0] == 5) onlyWhiteBalls++;
+//            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 5) jackPotBalls++;
+//        }
+//
+//        for (i = 0; i < currentPowerballLottery.ticketsCount; i++)
+//        {
+//            if (ticketComplianceLevel[1] == 1 && (ticketComplianceLevel[0] == 0 || ticketComplianceLevel[0] == 1))
+//            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[0]) / (redOrRedPlusWhite * 100);
+//            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 3)
+//            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[1]) / (anyThreeBalls * 100);
+//            if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 4)
+//            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[2]) / (anyFourBalls * 100);
+//            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 4)
+//            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[3]) / (fourWhiteAndRed * 100);
+//            if (ticketComplianceLevel[1] == 0 && ticketComplianceLevel[0] == 5)
+//            currentPowerballLottery.tickets[i].money = regularPrize * (wonPercents[4]) / (onlyWhiteBalls * 100);
+//            if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 5)
+//            currentPowerballLottery.tickets[i].money = jackPot / jackPotBalls;
+//
+//            if(ticketComplianceLevel[0] + ticketComplianceLevel[1] < 6) regularLotteryCountedPrize += currentPowerballLottery.tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из основной лотереи
+//            if(ticketComplianceLevel[0] + ticketComplianceLevel[1] == 6) jackPotCountedPrize += currentPowerballLottery.tickets[i].money; //шаг за шагом вычисляем, сколько денег мы распределим из джек пота
+//            balanceOf[currentPowerballLottery.tickets[i].owner] += currentPowerballLottery.tickets[i].money;//перечисление средств за выигрыш на счет победителя
+//        }
+//
+//        regularPrize -= regularLotteryCountedPrize;//рассчитываем остаток от основного приза
+//        jackPot -= jackPotCountedPrize;//рассчитываем остаток от джек пота
+//        return true;
+//    }
 
     // Получение информации о билете
     function getTicket(uint lotteryId, uint ticketId) public constant returns (address owner, string time, uint[6] balls, uint money) {
@@ -234,5 +237,54 @@ contract LotteryPowerball is DHFBaseCurrency {
             lottery = historyPowerballLotteries[lotteryId];
         }
         return (lottery.date, lottery.ticketsCount, lottery.prizeCombination);
+    }
+
+    function setCountTicketWithPrizeCombinations(uint redOrRedPlusWhite, uint anyThreeBalls, uint anyFourBalls, uint fourWhiteAndRed, uint onlyWhiteBalls, uint jackPotBalls) public onlyOwner returns (bool) {
+        if (isRunningLottery()) return false;
+        if (redOrRedPlusWhite < 0 || anyThreeBalls < 0 || anyFourBalls < 0 || fourWhiteAndRed < 0 || onlyWhiteBalls < 0 || jackPotBalls < 0) return false;
+        if ((redOrRedPlusWhite + anyThreeBalls + anyFourBalls + fourWhiteAndRed + onlyWhiteBalls + jackPotBalls) > currentPowerballLottery.ticketsCount) return false;
+
+        currentPowerballLottery.countTicketWithPrizeCombinations[0] = redOrRedPlusWhite;
+        currentPowerballLottery.countTicketWithPrizeCombinations[1] = anyThreeBalls;
+        currentPowerballLottery.countTicketWithPrizeCombinations[2] = anyFourBalls;
+        currentPowerballLottery.countTicketWithPrizeCombinations[3] = fourWhiteAndRed;
+        currentPowerballLottery.countTicketWithPrizeCombinations[4] = onlyWhiteBalls;
+        currentPowerballLottery.countTicketWithPrizeCombinations[5] = jackPotBalls;
+        currentPowerballLottery.isSetCountPrizeCombinations = true;
+
+        return true;
+    }
+
+    function payPrize(uint ticketNumber) public onlyOwner returns (bool) {
+        if (ticketNumber > currentPowerballLottery.ticketsCount) return false;
+
+        uint regularLotteryCountedPrize;//размер распределяемого приза основной лотереи
+        uint jackPotCountedPrize;//размер распределяемого приза джек-пота
+        uint[2] memory ticketComplianceLevel = getTicketComplianceLevel(currentPowerballLottery.tickets[ticketNumber].balls);
+        uint ticketMoney = 0;
+
+        if (ticketComplianceLevel[1] == 1 && (ticketComplianceLevel[0] == 0 || ticketComplianceLevel[0] == 1))
+            ticketMoney = regularPrize * (wonPercents[0]) / (currentPowerballLottery.countTicketWithPrizeCombinations[0] * 100);
+        if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 3)
+            ticketMoney = regularPrize * (wonPercents[1]) / (currentPowerballLottery.countTicketWithPrizeCombinations[1] * 100);
+        if (ticketComplianceLevel[0] + ticketComplianceLevel[1] == 4)
+            ticketMoney = regularPrize * (wonPercents[2]) / (currentPowerballLottery.countTicketWithPrizeCombinations[2] * 100);
+        if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 4)
+            ticketMoney = regularPrize * (wonPercents[3]) / (currentPowerballLottery.countTicketWithPrizeCombinations[3] * 100);
+        if (ticketComplianceLevel[1] == 0 && ticketComplianceLevel[0] == 5)
+            ticketMoney = regularPrize * (wonPercents[4]) / (currentPowerballLottery.countTicketWithPrizeCombinations[4] * 100);
+        if (ticketComplianceLevel[1] == 1 && ticketComplianceLevel[0] == 5)
+            ticketMoney = jackPot / currentPowerballLottery.countTicketWithPrizeCombinations[5];
+
+        if(ticketComplianceLevel[0] + ticketComplianceLevel[1] < 6) regularLotteryCountedPrize += ticketMoney; //шаг за шагом вычисляем, сколько денег мы распределим из основной лотереи
+        if(ticketComplianceLevel[0] + ticketComplianceLevel[1] == 6) jackPotCountedPrize += ticketMoney; //шаг за шагом вычисляем, сколько денег мы распределим из джек пота
+        balanceOf[currentPowerballLottery.tickets[ticketNumber].owner] += ticketMoney;//перечисление средств за выигрыш на счет победителя
+
+        regularPrize -= regularLotteryCountedPrize;//рассчитываем остаток от основного приза
+        jackPot -= jackPotCountedPrize;//рассчитываем остаток от джек пота
+
+        currentPowerballLottery.tickets[ticketNumber].complianceLevel = ticketComplianceLevel;
+        currentPowerballLottery.tickets[ticketNumber].money = ticketMoney;
+        return true;
     }
 }
