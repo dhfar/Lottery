@@ -14,7 +14,8 @@ contract Lottery_6_Of_45_Light is DHFBaseCurrency
     uint public ticketPrice = 10; // цена билета
     uint public JackPotAssignment = 40; // процент отчислений в Джек-Пот от каждого билета
     uint public regularPrizeAssignment = 40; //процент отчислений в регулярный призовой фонд
-    uint public prize_combination_size = 6;//количество чисел в призовой комбинации
+    uint public prizeCombinationSize = 6;//количество чисел в призовой комбинации
+    uint public maxNumber = 45; //самое большое число, которое можно загадать в билете
     //структура билета
     struct ticket{
         address owner; //владелец билета
@@ -49,11 +50,30 @@ contract Lottery_6_Of_45_Light is DHFBaseCurrency
         lotteries[0].played = false;
     }
     
+    /*проверка на допустимость призовой комбинации - ровно 6 номеров в билете от 1 до 45
+     *в нем допустимы нули, но число их не должно быть больше 7
+     *Создано Вопиловым А.
+     *@prizeNumbers проверяемый билет
+     *return bool success - допустим ли такой билет по своему составу чисел
+     *22.11.2017
+     */
+    function isAllowablePrizeCombination(uint[6] prizeNumbers) public constant returns (bool)
+    {
+        if((prizeNumbers[5] == 0) || (prizeNumbers[5] > maxNumber)) return false;
+        for (uint i = 0; i < 5; i++)
+        {
+            if((prizeNumbers[i] > maxNumber) || (prizeNumbers[i] == 0)) return false;
+            for(uint k = i + 1; k < 6; k++)
+                if (prizeNumbers[i] == prizeNumbers[k]) return false;
+        }
+        return true;
+    }
+    
     /*Расчет факториала числа
      *Создано Вопиловым А.
-     *@number uint256 число для расчета факториала
-     *return uint256 fact - значение факториала числа
-     *10.11.2017
+     *@number uint число для расчета факториала
+     *return uint fact - значение факториала числа
+     *1.11.2017
      */
     function factorial(uint number) public constant returns(uint fact) 
     {
@@ -66,15 +86,13 @@ contract Lottery_6_Of_45_Light is DHFBaseCurrency
     
     /*Расчет цены билета от количества номеров в нем
      *Создано Вопиловым А.
-     *@number_count uint8 выбрано чисел в билете
+     *@numberCount uint8 выбрано чисел в билете
      *return uint256 price - результирующая цена билета - рассчитывается от базовой цены билета, помноженной на число комбинаций в нем
      *1.12.2017
      */
-    function getTicketPrice(uint number_count) public constant returns (uint price)
+    function getTicketPrice(uint numberCount) public constant returns (uint price)
     {
-        if(number_count < prize_combination_size) return 0;
-        return (factorial(number_count) * ticketPrice) / (factorial(number_count - prize_combination_size) * factorial(prize_combination_size));
+        if(numberCount < prizeCombinationSize) return 0;
+        return (factorial(numberCount) * ticketPrice) / (factorial(numberCount - prizeCombinationSize) * factorial(prizeCombinationSize));
     }
-    
-    
 }

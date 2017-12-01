@@ -2,7 +2,7 @@ var Lottery = artifacts.require("Lottery_6_Of_45_Light");
 
 contract('lottery', function(accounts) {
     it("Проверка цены билета", async () => {
-    const lottery =  await Lottery.deployed()
+    const lottery =  await Lottery.deployed();
     assert.equal(await lottery.getTicketPrice(0), 0, "Цена билета из 1 номера");
     assert.equal(await lottery.getTicketPrice(1), 0, "Цена билета из 2 номеров");
     assert.equal(await lottery.getTicketPrice(2), 0, "Цена билета из 3 номеров");
