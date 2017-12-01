@@ -16,13 +16,15 @@ contract Lottery_6_Of_45_Light is DHFBaseCurrency
     uint public regularPrizeAssignment = 40; //процент отчислений в регулярный призовой фонд
     uint public prizeCombinationSize = 6;//количество чисел в призовой комбинации
     uint public maxNumber = 45; //самое большое число, которое можно загадать в билете
+    uint public lastLotteryId = 0; // номер последней лотереи
     //структура билета
     struct ticket{
         address owner; //владелец билета
-        string time; //время и дата покупки билета
-        uint8[13] numbers; //числа в номере - сейчас сделаем ограниченное число - точно 4 числа в билете
-        uint8 compliance_level; //число совпавших номеров с выигрышной комбинацией - инициализируется нулем
-        uint8 valuable_numbers;//значащих чисел в билете - ненулевых
+        string buyTime; //время и дата покупки билета
+        //mapping (uint => uint) numbers; //числа в номере - сейчас сделаем ограниченное число - точно 4 числа в билете
+        uint[] numbers; //числа в номере - сейчас сделаем ограниченное число - точно 4 числа в билете
+        uint complianceLevel; //число совпавших номеров с выигрышной комбинацией - инициализируется нулем
+        uint valuableNumbers;//значащих чисел в билете - ненулевых
         uint money;//выграно данным билетом денег
     }
     //структура 1го тиража лотереи
@@ -49,6 +51,167 @@ contract Lottery_6_Of_45_Light is DHFBaseCurrency
         lotteries[0].active = true;
         lotteries[0].played = false;
     }
+    
+    /*приобретение билета длиной от 6 до 13 номеров в билете
+     *Создано Вопиловым А.
+     *@number_1-number_13 uint числа для билета - всего 13
+     *return bool success - допустима ли покупка билета
+     *1.12.2017
+     */
+    function buyTicket(
+            uint number_1,
+            uint number_2,
+            uint number_3,
+            uint number_4,
+            uint number_5,
+            uint number_6,
+            uint number_7,
+            uint number_8,
+            uint number_9,
+            uint number_10,
+            uint number_11,
+            uint number_12,
+            uint number_13)
+        public returns (bool success){
+        uint[] memory currentTicket;// = [number_1, number_2, number_3, number_4, number_5, number_6, number_7, number_8, number_9, number_10, number_11, number_12, number_13];
+        /*currentTicket.push(number_1);
+        currentTicket.push(number_2);
+        currentTicket.push(number_3);
+        currentTicket.push(number_4);
+        currentTicket.push(number_5);
+        currentTicket.push(number_6);
+        currentTicket.push(number_7);
+        currentTicket.push(number_8);
+        currentTicket.push(number_9);
+        currentTicket.push(number_10);
+        currentTicket.push(number_11);
+        currentTicket.push(number_12);
+        currentTicket.push(number_13);*/
+        uint[13] memory ticketNumbers;
+        ticketNumbers[0] = number_1;
+        ticketNumbers[1] = number_2;
+        ticketNumbers[2] = number_3;
+        ticketNumbers[3] = number_4;
+        ticketNumbers[4] = number_5;
+        ticketNumbers[5] = number_6;
+        ticketNumbers[6] = number_7;
+        ticketNumbers[7] = number_8;
+        ticketNumbers[8] = number_9;
+        ticketNumbers[9] = number_10;
+        ticketNumbers[10] = number_11;
+        ticketNumbers[11] = number_12;
+        ticketNumbers[12] = number_13;
+        //normalizeTicket(number_1, number_2, number_3, number_4, number_5, number_6, number_7, number_8, number_9, number_10, number_11, number_12, number_13);
+        normalizeTicket(ticketNumbers);
+        /*new_ticket.numbers[0] = number_1;
+        new_ticket.numbers[1] = number_2;
+        new_ticket.numbers[2] = number_3;
+        new_ticket.numbers[3] = number_4;
+        new_ticket.numbers[4] = number_5;
+        new_ticket.numbers[5] = number_6;
+        new_ticket.numbers[6] = number_7;
+        new_ticket.numbers[7] = number_8;
+        new_ticket.numbers[8] = number_9;
+        new_ticket.numbers[9] = number_10;
+        new_ticket.numbers[10] = number_11;
+        new_ticket.numbers[11] = number_12;
+        new_ticket.numbers[12] = number_13;*/
+        //return checkTicketBuying(new_ticket);
+        return true;
+    }
+    
+    /*проверка процедуры покупки билета
+     *пришлось вынести ее из-за лимитирования на использование переменных в функции - порядка 16!
+     *Создано Вопиловым А.
+     *@ticked_for_checking проверяемый билет
+     *return bool success - допустима ли покупка билета
+     *1.12.2017
+     */
+    function checkTicketBuying(ticket ticked_for_checking) internal returns (bool success)
+    {
+        if(!lotteries[lastLotteryId].active) return false;
+        var(allowability, valuable_numbers) = isAllowableBigTicket(ticked_for_checking.numbers);
+        if(!allowability) return false;
+        uint current_ticket_price = getTicketPrice(valuable_numbers);// расчет текущей цены билета из количества выбранных чисел в нем
+        if (balanceOf[msg.sender] < current_ticket_price) return false;
+        ticked_for_checking.owner = msg.sender;
+        ticked_for_checking.buyTime = "06.11.2017";
+        ticked_for_checking.valuableNumbers = valuable_numbers;
+        lotteries[lastLotteryId].tickets[lotteries[lastLotteryId].tickets_count] = ticked_for_checking;
+        lotteries[lastLotteryId].tickets_count++;
+        balanceOf[msg.sender] -= current_ticket_price;
+        JackPot += (current_ticket_price * JackPotAssignment) / 100;//в джекпот отправляется только часть средств с билета, другая часть отправляется в регулярный фонд
+        regularPrize += (current_ticket_price * regularPrizeAssignment) / 100;//в регулярный приз лотереи отправляется только часть средств с билета, другая часть отправляется в джек пот
+        /*
+        uint8[] memory temp;
+        for (uint8 i = 0; i < 13; i++ ){
+            temp[i] = ticked_for_checking.numbers[i];
+        }*/
+        //BuyTicket(current_ticket_number, current_ticket_price, msg.sender, now, lastLotteryId , "Lottery 6 45", temp);
+        return true;
+    }
+    
+    function normalizeTicket(
+            /*uint number_1,
+            uint number_2,
+            uint number_3,
+            uint number_4,
+            uint number_5,
+            uint number_6,
+            uint number_7,
+            uint number_8,
+            uint number_9,
+            uint number_10,
+            uint number_11,
+            uint number_12,
+            uint number_13*/
+            uint[13] ticketNumbers)
+    returns (bool result,uint numbersInTicket,uint[] normalTicket)
+    {
+        //uint[13] memory ticketNumbers;
+        return normalizeTicketInner(ticketNumbers);
+    }
+    
+    function normalizeTicketInner(uint[13] ticketNumbers) returns (bool result,uint numbersInTicket,uint[] normalTicket)
+    {
+        numbersInTicket = 13;
+        if(ticketNumbers[12] == 0) numbersInTicket--;
+        for (uint i = 0; i < 12; i++)
+        {
+            if((ticketNumbers[i] > maxNumber) || (ticketNumbers[12] > maxNumber) || (numbersInTicket < 6)) return (false, numbersInTicket,normalTicket);
+            if(ticketNumbers[i] == 0) numbersInTicket--;
+            for(uint k = i + 1; k < 13; k++)
+            {
+                if ((ticketNumbers[i] == ticketNumbers[k]) && (ticketNumbers[i] != 0)) return (false, numbersInTicket,normalTicket);
+            }
+        }
+        return (true,numbersInTicket,normalTicket);
+    }
+    
+    /*проверка на допустимость большого билета от 6 до 13 номеров в билете
+     *в нем допустимы нули, но число их не должно быть больше 7
+     *Создано Вопиловым А.
+     **@ticketNumbers проверяемый билет
+     *return bool success - допустим ли такой билет по своему составу чисел
+     **return uint8 numbers_in_ticket количество значащих чисел в билете - необходимо для определения его цены
+     *9.11.2017
+     */
+    function isAllowableBigTicket(uint[] ticketNumbers) public constant returns (bool, uint8 numbersInTicket)
+    {
+        numbersInTicket = 13;
+        if(ticketNumbers[12] == 0) numbersInTicket--;
+        for (uint i = 0; i < 12; i++)
+        {
+            if((ticketNumbers[i] > maxNumber) || (ticketNumbers[12] > maxNumber) || (numbersInTicket < 6)) return (false, numbersInTicket);
+            if(ticketNumbers[i] == 0) numbersInTicket--;
+            for(uint k = i + 1; k < 13; k++)
+            {
+                if ((ticketNumbers[i] == ticketNumbers[k]) && (ticketNumbers[i] != 0)) return (false, numbersInTicket);
+            }
+        }
+        return (true,numbersInTicket);
+    }
+    
     
     /*проверка на допустимость призовой комбинации - ровно 6 номеров в билете от 1 до 45
      *в нем допустимы нули, но число их не должно быть больше 7
