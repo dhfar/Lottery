@@ -35,6 +35,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     mapping (uint => PowerballTicket) tickets; //все билеты одной лотереи.
     uint ticketsCount; //количество билетов в этой лотерее
     uint[6] prizeCombination; // выигрышная комбинация текущего тиража лотереи
+    bool isSetPrizeCombination; // выигрышная комбинация задана
     bool active; //ведется или не ведется прием ставок
     bool played; //проведен ли розыгрыш
     uint[6] countTicketWithPrizeCombinations; // количество билетов с призовыми комбинациями
@@ -52,6 +53,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     function startLottery(uint jackPotLottery, uint regularPrizeLottery) public onlyOwner returns (bool res)  {
         if (!(jackPotLottery > 0 && regularPrizeLottery > 0 && jackPotLottery > regularPrizeLottery)) return false;
 
+        jackPot += regularPrize;
         jackPot += jackPotLottery;
         regularPrize = regularPrizeLottery;
 
@@ -59,8 +61,11 @@ contract LotteryPowerball is DHFBaseCurrency {
         currentPowerballLottery.date = "16.11.2017";
         currentPowerballLottery.ticketsCount = 0;
         currentPowerballLottery.prizeCombination = [0, 0, 0, 0, 0, 0];
+        currentPowerballLottery.isSetPrizeCombination = false;
         currentPowerballLottery.active = true;
         currentPowerballLottery.played = false;
+        currentPowerballLottery.countTicketWithPrizeCombinations = [0, 0, 0, 0, 0, 0];
+        currentPowerballLottery.isSetCountPrizeCombinations = false;
 
         return true;
     }
@@ -82,7 +87,7 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     function setPrizeCombination(uint firstWhiteBall, uint secondWhiteBall, uint thirdWhiteBall, uint fourthWhiteBall, uint fiveWhiteBall, uint redBall) public onlyOwner returns (bool res) {
-        if(currentPowerballLottery.active || !currentPowerballLottery.played) return false;
+        if(currentPowerballLottery.active || !currentPowerballLottery.played || currentPowerballLottery.isSetPrizeCombination) return false;
         uint[6] memory balls;
         balls[0] = firstWhiteBall;
         balls[1] = secondWhiteBall;
@@ -92,7 +97,12 @@ contract LotteryPowerball is DHFBaseCurrency {
         balls[5] = redBall;
         if (!validationBallsInTicket(balls)) return false;
         currentPowerballLottery.prizeCombination = balls;
+        currentPowerballLottery.isSetPrizeCombination = true;
         return true;
+    }
+
+    function getPrizeCombination() public constant returns (uint[6]){
+        return currentPowerballLottery.prizeCombination;
     }
 
 
@@ -253,6 +263,10 @@ contract LotteryPowerball is DHFBaseCurrency {
         currentPowerballLottery.isSetCountPrizeCombinations = true;
 
         return true;
+    }
+
+    function getCountTicketWithPrizeCombinations() public constant returns (uint[6]){
+        return currentPowerballLottery.countTicketWithPrizeCombinations;
     }
 
     function payPrize(uint ticketNumber) public onlyOwner returns (bool) {
