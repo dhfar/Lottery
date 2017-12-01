@@ -72,6 +72,7 @@ contract Lottery_6_Of_45_Light is DHFBaseCurrency
      */
     function getTicketPrice(uint number_count) public constant returns (uint price)
     {
+        if(number_count < prize_combination_size) return 0;
         return (factorial(number_count) * ticketPrice) / (factorial(number_count - prize_combination_size) * factorial(prize_combination_size));
     }
     
