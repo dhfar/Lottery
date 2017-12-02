@@ -152,6 +152,9 @@ contract LotteryPowerball is DHFBaseCurrency {
 
         for (uint i = 0; i < countWhiteBallsInTicket; i++) {
             if (ballsInTicket[i] > maxWhiteBallNumberInTicket || ballsInTicket[i] == 0) return false;
+            for(uint k = i + 1; k < countWhiteBallsInTicket; k++){
+                if(ballsInTicket[i] == ballsInTicket[k]) return false;
+            }
         }
         if (ballsInTicket[5] > maxRedBallNumberInTicket || ballsInTicket[5] == 0) return false;
         return true;
