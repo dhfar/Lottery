@@ -13,3 +13,4 @@ build/contracts/owned.json
 build/contracts/Migrations.json
 build/contracts/MetaCoin.json
 build/contracts/ConvertLib.json
+node_modules/
