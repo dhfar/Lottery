@@ -87,7 +87,9 @@ contract LotteryPowerball is DHFBaseCurrency {
     }
 
     function setPrizeCombination(uint firstWhiteBall, uint secondWhiteBall, uint thirdWhiteBall, uint fourthWhiteBall, uint fiveWhiteBall, uint redBall) public onlyOwner returns (bool res) {
-        if(currentPowerballLottery.active || !currentPowerballLottery.played || currentPowerballLottery.isSetPrizeCombination) return false;
+        if (currentPowerballLottery.active || !currentPowerballLottery.played || currentPowerballLottery.isSetPrizeCombination) {
+            return false;
+        }
         uint[6] memory balls;
         balls[0] = firstWhiteBall;
         balls[1] = secondWhiteBall;
@@ -95,13 +97,15 @@ contract LotteryPowerball is DHFBaseCurrency {
         balls[3] = fourthWhiteBall;
         balls[4] = fiveWhiteBall;
         balls[5] = redBall;
-        if (!validationBallsInTicket(balls)) return false;
+        if (!validationBallsInTicket(balls)) {
+            return false;
+        }
         currentPowerballLottery.prizeCombination = balls;
         currentPowerballLottery.isSetPrizeCombination = true;
         return true;
     }
 
-    function getPrizeCombination() public constant returns (uint[6]){
+    function getPrizeCombination() public constant returns (uint[6]) {
         return currentPowerballLottery.prizeCombination;
     }
 
@@ -128,15 +132,21 @@ contract LotteryPowerball is DHFBaseCurrency {
 
     // Покупка билета
     function buyTicket(uint[6] ballsInTicket) private returns (bool res) {
-        if (!isRunningLottery()) return false;
-        if (!validationBallsInTicket(ballsInTicket)) return false;
-
+        if (!isRunningLottery()) {
+            return false;
+        }
+        if (!validationBallsInTicket(ballsInTicket)) {
+            return false;
+        }
         PowerballTicket memory newTicket;
         newTicket.owner = msg.sender;
         newTicket.time = "06.11.2017";
         newTicket.balls = ballsInTicket;
 
-        if (balanceOf[msg.sender] < ticketPrice) return false;
+        if (balanceOf[msg.sender] < ticketPrice) {
+            return false;
+        }
+        
         balanceOf[msg.sender] -= ticketPrice;
         // jackPot += (ticketPrice * jackPotAssignment) / 100;
         // regularPrize += (ticketPrice * regularPrizeAssignment) / 100;
