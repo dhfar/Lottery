@@ -20,6 +20,9 @@
     "url": "https://github.com/Rende11/Lottery-1/issues"
   },
   "homepage": "https://github.com/Rende11/Lottery-1#readme",
+  "dependencies": {
+    "web3": "*"
+  },
   "devDependencies": {
     "truffle": "^4.0.1",
     "ethereumjs-testrpc": "*"
