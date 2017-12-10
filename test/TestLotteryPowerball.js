@@ -8,27 +8,29 @@ contract('LotteryPowerballTests', function(accounts) {
         await powerBall.startLottery(100000, 10000);
         const jackPot = await powerBall.jackPot();
         const regularPrize = await powerBall.regularPrize();
-        //assert.equal(jackPot.toNumber(), 100000, "Джек пот равен 100000");
+        assert.equal(jackPot.toNumber(), 100000, "Джек пот равен 100000");
         assert.equal(regularPrize.toNumber(), 10000, "Призовой фонд равен 10000");
         
         
         const buyTicket = await powerBall.buyTicket.call(1, 2, 3, 4, 5, 6);
-        console.log(buyTicket);
-        //TODO
+        
         assert.isTrue(buyTicket, "Билет 1, 2, 3, 4, 5, 6 приобретён"); // Contract returning?
         assert.isTrue(await powerBall.stopLottery.call(), "Розыгрыш завершен");
+        
         assert.isTrue(await powerBall.setPrizeCombination.call(1, 2, 3, 4, 5, 6), "Задана призовая комбинация 1, 2, 3, 4, 5, 6");
         
-        assert.isTrue(await powerBall.setCountTicketWithPrizeCombinations(0,0,0,0,0,1), "Розыгрыш проведен");
-        assert.isTrue(await powerBall.payPrize(0), "Розыгрыш проведен");
-        const tiket = await powerBall.getTicket(1,0);
-        
-        assert.equal(tiket[3], 100000, "Победитель получил 100000");
+        assert.isTrue(await powerBall.setCountTicketWithPrizeCombinations.call(0,0,0,0,0,1), "Розыгрыш проведен");
+        assert.isTrue(await powerBall.payPrize.call(0), "Розыгрыш проведен");
+        const ticket = await powerBall.getTicket.call(1,0);
+        //console.log(ticket);
+        console.log(ticket[3]);
+        console.log(ticket[3].toNumber());
+        assert.equal(ticket[3].toNumber(), 100000, "Победитель получил 100000");
         assert.isTrue(await powerBall.finishLottery(), 'Лотерея завершена');
     });
 });
 
-/*
+
 contract('LotteryPowerballTwoTests', function(accounts) {
     it("LotteryPowerball success", async () => {
         const powerBall =  await LP.deployed()
@@ -37,10 +39,10 @@ contract('LotteryPowerballTwoTests', function(accounts) {
         assert.equal(await powerBall.jackPot(), 100000, "Джек пот равен 100000");
         assert.equal(await powerBall.regularPrize(), 10000, "Призовой фонд равен 10000");
         
-        //TODO
+        
         const buyTicket = await powerBall.buyTicket(1, 2, 3, 4, 5, 6);
         
-        //assert.isTrue(buyTicket, "Билет 1, 2, 3, 4, 5, 6 приобретён");
+        assert.isTrue(buyTicket, "Билет 1, 2, 3, 4, 5, 6 приобретён");
         assert.isTrue(await powerBall.stopLottery(), "Розыгрыш завершен");
         assert.isTrue(await powerBall.setPrizeCombination(1, 2, 3, 4, 5, 6), "Задана призовая комбинация 1, 2, 3, 4, 5, 6");
         assert.isTrue(await powerBall.setCountTicketWithPrizeCombinations(0,0,0,0,0,1), "Розыгрыш проведен");
@@ -57,7 +59,7 @@ contract('LotteryPowerballTwoTests', function(accounts) {
         
         //TODO
         const buyTicket2 = await powerBall.buyTicket(1, 2, 3, 4, 5, 6);
-        //assert.isTrue(buyTicket2, "Билет 1, 2, 3, 4, 5, 6 приобретён");
+        assert.isTrue(buyTicket2, "Билет 1, 2, 3, 4, 5, 6 приобретён");
         assert.isTrue(await powerBall.stopLottery(), "Розыгрыш завершен");
         assert.isTrue(await powerBall.setPrizeCombination(1, 2, 3, 4, 5, 6), "Задана призовая комбинация 1, 2, 3, 4, 5, 6");
     
