@@ -38,15 +38,8 @@ contract PixelWars is Owned {
     */
     struct Character {
         string name; // ник
-        Skill[5] skils; // способности
-        Skill[5] skilsMask; // верхний предел прокачки персонажа
-    }
-    /*
-        Описание способностей
-    */
-    struct Skill {
-        uint slillType; // тип способности
-        uint[6] skillCharacteristic; // характеристики способности
+        uint[32] skils; // способности
+        uint[32] skilsMask; // верхний предел прокачки персонажа
     }
     /*
         Описание оружия
@@ -112,5 +105,88 @@ contract PixelWars is Owned {
         uint coins = msg.value / pixelWarsCoinPrice;
         accounts[msg.sender].pixelWarsCoin += coins;
         return true;
+    }
+    /*
+        Генерация уровня прокачки скилов нового персонажа.
+    */
+    function generateCharacterSkills() public view onlyOwner returns (uint[32]) {
+        bool error = false;
+        uint[32] memory skillsLevel;
+        bytes32 lastBlockHash = block.blockhash(block.number - 1);
+        bytes32 lastBlockHashKeccak256 = keccak256(lastBlockHash);
+        string memory s = bytes32ToString(lastBlockHashKeccak256);
+        bytes memory b = bytes(s);
+        for(uint i = 0; i < 32; i++){
+            var (convertValue, resultSuccess) = byteToUint(b[i]);
+            if(resultSuccess) {
+                skillsLevel[i] = convertValue;
+            } else {
+                error = true;
+            }
+        }
+        return skillsLevel;
+    }
+    /*
+        Преобразование байтов в числа
+    */
+    function byteToUint(byte b) public pure returns (uint, bool) {
+        uint retValue = 12345;
+        if(b >= 48 && b <= 57) {
+            retValue = uint(b) - 48;
+        } else if(b == 97) {
+            retValue = 10;
+        } else if(b == 98) {
+            retValue = 11;
+        } else if(b == 99) {
+            retValue = 12;
+        } else if(b == 100) {
+            retValue = 13;
+        } else if(b == 101) {
+            retValue = 14;
+        } else if(b == 102) {
+            retValue = 15;
+        }
+
+        if(retValue >= 0 && retValue <= 15) {
+            return (retValue, true);
+        }
+        return (retValue, false);
+    }
+
+    function char(byte b) public pure returns (byte) {
+        if (b < 10) {
+            return byte(uint8(b) + 0x30);
+        }
+        else {
+            return byte(uint8(b) + 0x57);
+        }
+    }
+    /*
+    Функция преобразовывает байты в строку UTF-8
+    @b32 - массив байт для преобразования
+    retutn string - полученная строка
+    */
+    function bytes32ToString(bytes32 b32) public pure returns (string out) {
+        bytes memory s = new bytes(64);
+        for (uint8 i = 0; i < 32; i++) {
+            byte b = byte(b32[i]);
+            byte hi = byte(uint8(b) / 16);
+            byte lo = byte(uint8(b) - 16 * uint8(hi));
+            s[i*2] = char(hi);
+            s[i*2+1] = char(lo);
+        }
+        out = string(s);
+    }
+
+    function bytes32ToBytes(bytes32 b32) public pure returns (bytes out) {
+        bytes memory s = new bytes(64);
+        for (uint8 i = 0; i < 32; i++) {
+            byte b = byte(b32[i]);
+            byte hi = byte(uint8(b) / 16);
+            byte lo = byte(uint8(b) - 16 * uint8(hi));
+            s[i*2] = char(hi);
+            s[i*2+1] = char(lo);
+        }
+        out = s;
     }
 }
