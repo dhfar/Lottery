@@ -2,7 +2,7 @@ var Lottery = artifacts.require("lottery_6_45");
 
 contract('lottery', function(accounts) {
 
-  it("factorial of 0", async () => {
+  it("factorial of 0, 2, 3, 10", async () => {
     const lottery =  await Lottery.deployed()
     
     assert.equal(await lottery.factorial(0), 1, "Factorial of 0 should be 1");

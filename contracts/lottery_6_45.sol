@@ -376,14 +376,14 @@ contract lottery_6_45 is DHFBaseCurrency
      *return uint256 fact - значение факториала числа
      *10.11.2017
      */
-    function factorial(uint256 number) public constant returns(uint256 fact) 
-    {
+    function factorial(uint256 number) public constant returns(uint256 fact) {
         fact = 1; 
-        if(number == 0) return 1;
-        for(uint256 i = 1;i<=number;i++)
+        if (number <= 0) {
+            return 1;
+        }
+        for (uint256 i = 1; i <= number; i++) {
             fact = fact * i;
+        }
         return fact;
     }
-    
-    
 }
