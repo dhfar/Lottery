@@ -16,15 +16,16 @@ contract PixelWars is Owned {
 
     uint public pixelWarsCoinPrice = 10000;
 
-
     mapping (uint => address) public characterIndexToAddress;
     /* This creates an array with all balances */
     mapping (address => uint256) public balanceOf;
+    /* персонажи */
+    mapping (uint => Character) public characters;
 
     event Assign(address indexedTo, uint256 characterIndex);
     event Transfer(address indexedFrom, address indexedTo, uint256 value);
     /*
-
+        Описание аккаунта
     */
     struct Account {
         string email; // почта
@@ -40,6 +41,8 @@ contract PixelWars is Owned {
         string name; // ник
         uint[32] skils; // способности
         uint[32] skilsMask; // верхний предел прокачки персонажа
+        bool isDeleted; // флаг удаления
+        uint experienceCoin;
     }
     /*
         Описание оружия
@@ -81,6 +84,7 @@ contract PixelWars is Owned {
     */
     function deactivateAccount() public returns (bool) {
         accounts[msg.sender].isActivate = !accounts[msg.sender].isActivate;
+        return true;
     }
     /*
         Получить баланс монет аккаунта
@@ -104,6 +108,59 @@ contract PixelWars is Owned {
         if(msg.value <= 0) return false;
         uint coins = msg.value / pixelWarsCoinPrice;
         accounts[msg.sender].pixelWarsCoin += coins;
+        return true;
+    }
+    /*
+        Создание персонажа
+    */
+    function createCharacter(string characterName) public returns (bool) {
+        // Аккаунта создан и активный
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
+        // Персонажи ещё не закончились
+        if (allCharactersAssigned) return false;
+        // Персонаж ещё никому не принадлежит
+        if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return false;
+        // Инициализируем нового персонажа
+        Character memory newCharacter;
+        newCharacter.name = characterName;
+        newCharacter.skilsMask = generateCharacterSkills();
+        newCharacter.isDeleted = false;
+        newCharacter.experienceCoin = 0;
+        // Сохраняем персонажа в список персонажей
+        characters[nextCharacterIndexToAssign] = newCharacter;
+        // Связываем нового персонажа с хозяином
+        characterIndexToAddress[nextCharacterIndexToAssign] = msg.sender;
+        // Увеличиваем индекс для следующего персонажа
+        nextCharacterIndexToAssign++;
+        // Баланс аккаунта увеличиваем
+        balanceOf[msg.sender]++;
+        return true;
+    }
+    /*
+        Удаление персонажа.
+        Персонаж остается без хозяина и получет статус удален.
+    */
+    function deleteCharacter(uint characterIndex) public returns (bool) {
+        // Аккаунта создан и активный
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
+        // Персонаж принадлежит вызвавшему функцию
+        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // Устанавливаем персонажу флаг удален
+        characters[characterIndex].isDeleted = true;
+        // Удаляем првязку персонажа к владельцу
+        characterIndexToAddress[characterIndex] == 0x0;
+        // Уменьшаем баланс владельца
+        balanceOf[msg.sender]--;
+        return true;
+    }
+    /*
+        Получение монент для прокачки скилов
+    */
+    function increaseExperienceCoin(uint characterIndex, uint experienceCoin) public onlyOwner returns (bool) {
+        // У персонажа есть хозяин
+        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] == msg.sender) return false;
+        // Увеличиваем колиство монет прокачки персонажа
+        characters[characterIndex].experienceCoin += experienceCoin;
         return true;
     }
     /*
