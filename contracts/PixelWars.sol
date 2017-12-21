@@ -123,7 +123,9 @@ contract PixelWars is Owned {
         // Инициализируем нового персонажа
         Character memory newCharacter;
         newCharacter.name = characterName;
-        newCharacter.skilsMask = generateCharacterSkills();
+        var (skilsMask, error) = generateCharacterSkills();
+        if (error) return false;
+        newCharacter.skilsMask = skilsMask;
         newCharacter.isDeleted = false;
         newCharacter.experienceCoin = 0;
         // Сохраняем персонажа в список персонажей
@@ -164,9 +166,29 @@ contract PixelWars is Owned {
         return true;
     }
     /*
+        Увеличение уровня прокачки скила (на 1)
+    */
+    function increaseSkillLevel(uint characterIndex, uint skillIndex) public returns (bool) {
+        // Аккаунта создан и активный
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
+        // Персонаж принадлежит вызвавшему функцию
+        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // Можно ли ещё качать эту способность
+        if (characters[characterIndex].skils[skillIndex] >= characters[characterIndex].skilsMask[skillIndex]) return false;
+        // Валидный скил индекс
+        if(skillIndex < 0 || skillIndex > 32 ) return false;
+        // Монеты для поднятия уровня скила
+        uint experienceForNextLevel = 2 * (2 ** characters[characterIndex].skils[skillIndex]);
+        // Есть ли нужное кол-во монет
+        if (characters[characterIndex].experienceCoin == 0 && characters[characterIndex].experienceCoin < experienceForNextLevel) return false;
+        characters[characterIndex].experienceCoin -= experienceForNextLevel;
+        characters[characterIndex].skils[skillIndex]++;
+        return true;
+    }
+    /*
         Генерация уровня прокачки скилов нового персонажа.
     */
-    function generateCharacterSkills() public view onlyOwner returns (uint[32]) {
+    function generateCharacterSkills() public view onlyOwner returns (uint[32], bool) {
         bool error = false;
         uint[32] memory skillsLevel;
         bytes32 lastBlockHash = block.blockhash(block.number - 1);
@@ -181,7 +203,38 @@ contract PixelWars is Owned {
                 error = true;
             }
         }
-        return skillsLevel;
+        return (skillsLevel, error);
+    }
+    /*
+        Получение выигрышного пикселя
+        characterCount - кол-во символов необходимых для получения выигрышного пикселя
+    */
+    function getWinningPixel(uint characterCount) public view onlyOwner returns (uint, bool, string) {
+        bool error = false;
+
+        bytes32 lastBlockHash = block.blockhash(block.number - 1);
+        bytes32 lastBlockHashKeccak256 = keccak256(lastBlockHash);
+        string memory s = bytes32ToString(lastBlockHashKeccak256);
+        bytes memory b = bytes(s);
+
+        uint characterConvertCount = 0;
+        uint resultValue = 1;
+        for(uint i = 0; i < characterCount; i++){
+            var (convertValue, resultSuccess) = byteToUint(b[i]);
+            if(resultSuccess) {
+                resultValue *= convertValue;
+            } else {
+                error = true;
+            }
+            characterConvertCount++;
+            if(i == 31 && characterConvertCount < characterCount){
+                i = 0;
+            }
+            if(characterConvertCount == characterCount){
+                break;
+            }
+        }
+        return (resultValue, error, s);
     }
     /*
         Преобразование байтов в числа
