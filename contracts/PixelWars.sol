@@ -16,6 +16,8 @@ contract PixelWars is Owned {
 
     uint public pixelWarsCoinPrice = 10000;
 
+    uint maxCharacterOnAccount = 32;
+
     mapping (uint => address) public characterIndexToAddress;
     /* This creates an array with all balances */
     mapping (address => uint256) public balanceOf;
@@ -30,7 +32,7 @@ contract PixelWars is Owned {
     struct Account {
         string email; // почта
         bytes32 password; // хэшпароля
-        bool isActivate; // активин/ неактивен
+        bool isActivate; // активен/ неактивен
         uint pixelWarsCoin; // игровая валюта
         bool isCreated; //  создан
     }
@@ -42,17 +44,25 @@ contract PixelWars is Owned {
         uint[32] skils; // способности
         uint[32] skilsMask; // верхний предел прокачки персонажа
         bool isDeleted; // флаг удаления
-        uint experienceCoin;
+        uint experienceCoin; // монеты для прокачки
+        uint winCount; // количество побед
+        uint gameCount; // количство игр
     }
     /*
-        Описание оружия
+        Описание трофея
     */
-    struct Gun {
-
+    struct Trophy {
+        // идентификатор трофея
+        uint trophyId;
+        // владелец трофея
+        uint characterOwner;
+        // дата получения
+        string dateReceive;
     }
-
     // ключ адрес кошеля владельца, значение инфо об аккаунте
     mapping (address => Account) private accounts;
+    uint lastAccountIndex = 0;
+    mapping (uint => address) private indexOfAccounts;
     /*
         Создание контракта
     */
@@ -77,6 +87,8 @@ contract PixelWars is Owned {
         newAccount.pixelWarsCoin = 0;
         newAccount.isCreated = true;
         accounts[msg.sender] = newAccount;
+        indexOfAccounts[lastAccountIndex] = msg.sender;
+        lastAccountIndex++;
         return true;
     }
     /*
@@ -85,6 +97,34 @@ contract PixelWars is Owned {
     function deactivateAccount() public returns (bool) {
         accounts[msg.sender].isActivate = !accounts[msg.sender].isActivate;
         return true;
+    }
+    /*
+        Получить информацию об учетной записи по идентификатору
+        indexAccount - идентификатор учетной записи
+        string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, Character[] - список персонажей
+    */
+    function getAccountInfoByIndex(uint indexAccount) public view onlyOwner returns (string, bool, uint, bool, address, uint[32]) {
+        return (accounts[indexOfAccounts[indexAccount]].email,
+        accounts[indexOfAccounts[indexAccount]].isActivate,
+        accounts[indexOfAccounts[indexAccount]].pixelWarsCoin,
+        accounts[indexOfAccounts[indexAccount]].isCreated,
+        indexOfAccounts[indexAccount],
+        getCharactersByIndex(indexAccount)
+        );
+    }
+    /*
+        Получить список идентификаторов персонажей по идентификатору учетной записи
+    */
+    function getCharactersByIndex(uint indexAccount) public view onlyOwner returns (uint[32]){
+        uint[32] memory characterByIndexAccount;
+        uint characterCount = 0;
+        for (uint i = 0; i < nextCharacterIndexToAssign; i++){
+            if(characterIndexToAddress[i] == indexOfAccounts[indexAccount]){
+                characterByIndexAccount[characterCount] = i;
+                characterCount++;
+            }
+        }
+        return characterByIndexAccount;
     }
     /*
         Получить баланс монет аккаунта
@@ -120,6 +160,8 @@ contract PixelWars is Owned {
         if (allCharactersAssigned) return false;
         // Персонаж ещё никому не принадлежит
         if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return false;
+        // проверка на лимит персонажей
+        if (balanceOf[msg.sender] > maxCharacterOnAccount) return false;
         // Инициализируем нового персонажа
         Character memory newCharacter;
         newCharacter.name = characterName;
@@ -192,8 +234,7 @@ contract PixelWars is Owned {
         bool error = false;
         uint[32] memory skillsLevel;
         bytes32 lastBlockHash = block.blockhash(block.number - 1);
-        bytes32 lastBlockHashKeccak256 = keccak256(lastBlockHash);
-        string memory s = bytes32ToString(lastBlockHashKeccak256);
+        string memory s = bytes32ToString(lastBlockHash);
         bytes memory b = bytes(s);
         for(uint i = 0; i < 32; i++){
             var (convertValue, resultSuccess) = byteToUint(b[i]);
@@ -213,8 +254,7 @@ contract PixelWars is Owned {
         bool error = false;
 
         bytes32 lastBlockHash = block.blockhash(block.number - 1);
-        bytes32 lastBlockHashKeccak256 = keccak256(lastBlockHash);
-        string memory s = bytes32ToString(lastBlockHashKeccak256);
+        string memory s = bytes32ToString(lastBlockHash);
         bytes memory b = bytes(s);
 
         uint characterConvertCount = 0;
@@ -258,6 +298,7 @@ contract PixelWars is Owned {
         }
 
         if(retValue >= 0 && retValue <= 15) {
+            retValue += 1;
             return (retValue, true);
         }
         return (retValue, false);
