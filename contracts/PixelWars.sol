@@ -226,7 +226,7 @@ contract PixelWars is Owned {
     */
     function increaseExperienceCoin(uint characterIndex, uint experienceCoin) public onlyOwner returns (bool) {
         // У персонажа есть хозяин
-        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] == msg.sender) return false;
+        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
         // Увеличиваем колиство монет прокачки персонажа
         characters[characterIndex].experienceCoin += experienceCoin;
         return true;
@@ -286,6 +286,7 @@ contract PixelWars is Owned {
         for(uint i = 0; i < characterCount; i++){
             var (convertValue, resultSuccess) = byteToUint(b[i]);
             if(resultSuccess) {
+                convertValue += 1;
                 resultValue *= convertValue;
             } else {
                 error = true;
@@ -322,7 +323,6 @@ contract PixelWars is Owned {
         }
 
         if(retValue >= 0 && retValue <= 15) {
-            retValue += 1;
             return (retValue, true);
         }
         return (retValue, false);
