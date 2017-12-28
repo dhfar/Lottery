@@ -13,3 +13,5 @@ build/contracts/owned.json
 build/contracts/Migrations.json
 build/contracts/MetaCoin.json
 build/contracts/ConvertLib.json
+build/contracts/PixelWars.json
+build/contracts/RgbLottery.json

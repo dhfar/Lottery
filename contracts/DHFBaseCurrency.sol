@@ -1,25 +1,6 @@
 pragma solidity ^0.4.17;
 
-contract owned {
-    address public owner;
-
-    //конструктор класса: при СОЗДАНИИ контракта в качестве владелльца контракта прописывается его создатель
-    function owned() public {
-        owner = msg.sender;
-    }
-
-    //Модификатор - в начале функции, наследуемой от можификатора .сначала выполняется код модификатора, а затем - код самой функции
-    // в этом модификаторе проверяется является ли исполнитель метода создателем контракта
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
-    }
-
-    //функция для назначения нового владельца контракта - может исполняться только старым владельцем
-    function transferOwnership(address newOwner) onlyOwner public {
-        owner = newOwner;
-    }
-}
+import "./Owned.sol";
 
 //а вот это надо найти что такое
 interface tokenRecipient { function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData) public; }
@@ -188,7 +169,7 @@ contract TokenERC20 {
 /******************************************/
 
 //наследуем контракт от owned и erc20
-contract DHFBaseCurrency is owned, TokenERC20 {
+contract DHFBaseCurrency is Owned, TokenERC20 {
 
     uint256 public sellPrice;
     uint256 public buyPrice;

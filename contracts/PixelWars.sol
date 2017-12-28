@@ -198,6 +198,30 @@ contract PixelWars is Owned {
         return true;
     }
     /*
+        Получение инфо о персонаже по индексу
+        владелец, ник, способности, маска способностей, флаг удаления, монеты для прокачки
+    */
+    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint[32], uint[32], bool, uint) {
+        return (
+        characterIndexToAddress[characterIndex],
+        characters[characterIndex].name,
+        characters[characterIndex].skils,
+        characters[characterIndex].skilsMask,
+        characters[characterIndex].isDeleted,
+        characters[characterIndex].experienceCoin
+        );
+    }
+    /*
+        Получение статистики персонажа
+        Игры, победы
+    */
+    function getCharacterStatisticsByIndex(uint characterIndex) public view returns (uint, uint) {
+        return (
+        characters[characterIndex].winCount,
+        characters[characterIndex].gameCount
+        );
+    }
+    /*
         Получение монент для прокачки скилов
     */
     function increaseExperienceCoin(uint characterIndex, uint experienceCoin) public onlyOwner returns (bool) {
