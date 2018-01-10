@@ -79,3 +79,42 @@ contract('IncreaseExperienceCoinAndSkillLevelUp', function() {
         assert.equal(parseInt(newCharacter[2][skillIndex]), parseInt(lvlAfterIncrease, 10) + 1, "Способность успешно прокачана");
 });
 });
+
+contract('BuyPixelWarsCoins', function(accounts) {
+    it("Тест: покупки игровой валюты", async () => {
+        const pixelWars =  await PW.deployed()
+        await pixelWars.createAccount("mail@mail.ru", "petrovich");
+        await pixelWars.createCharacter("Petrivich");
+        var price = await pixelWars.pixelWarsCoinPrice();
+        //console.log(price);
+        // измнение курса
+        assert.equal(price, 10000, "Курс по умолчанию верен");
+        await pixelWars.buyPixelWarsCoins({from : accounts[0], value: 10000000});
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 1000, "Куплено верное кол-во монет");
+
+        await pixelWars.setPixelWarsCoinPrice(100000);
+        price = await pixelWars.pixelWarsCoinPrice();
+        assert.equal(price, 100000, "Курс изменен на 100000");
+        await pixelWars.buyPixelWarsCoins({from : accounts[0], value: 10000000});
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 1100, "Куплено верное кол-во монет");
+
+        await pixelWars.setPixelWarsCoinPrice(1000000);
+        price = await pixelWars.pixelWarsCoinPrice();
+        assert.equal(price, 1000000, "Курс изменен на 1000000");
+        await pixelWars.buyPixelWarsCoins({from : accounts[0], value: 10000000});
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 1110, "Куплено верное кол-во монет");
+
+        await pixelWars.setPixelWarsCoinPrice(10000000);
+        price = await pixelWars.pixelWarsCoinPrice();
+        assert.equal(price, 10000000, "Курс изменен на 10000000");
+        // покупка монет
+        await pixelWars.buyPixelWarsCoins({from : accounts[0], value: 10000000});
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 1111, "Куплено верное кол-во монет");
+        // console.log(balance);
+    });
+});
+

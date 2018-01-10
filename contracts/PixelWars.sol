@@ -135,7 +135,7 @@ contract PixelWars is Owned {
     /*
         Задать цену покупки игровой валюты(в газе)
     */
-    function setPixelWarsCoinPrice(uint newPrice) private onlyOwner returns (bool) {
+    function setPixelWarsCoinPrice(uint newPrice) public onlyOwner returns (bool) {
         if(newPrice <= 0) return false;
         pixelWarsCoinPrice = newPrice;
         return true;
@@ -328,7 +328,7 @@ contract PixelWars is Owned {
         return (retValue, false);
     }
 
-    function char(byte b) public pure returns (byte) {
+    function convertToChar(byte b) public pure returns (byte) {
         if (b < 10) {
             return byte(uint8(b) + 0x30);
         }
@@ -347,8 +347,8 @@ contract PixelWars is Owned {
             byte b = byte(b32[i]);
             byte hi = byte(uint8(b) / 16);
             byte lo = byte(uint8(b) - 16 * uint8(hi));
-            s[i*2] = char(hi);
-            s[i*2+1] = char(lo);
+            s[i*2] = convertToChar(hi);
+            s[i*2+1] = convertToChar(lo);
         }
         out = string(s);
     }
@@ -359,8 +359,8 @@ contract PixelWars is Owned {
             byte b = byte(b32[i]);
             byte hi = byte(uint8(b) / 16);
             byte lo = byte(uint8(b) - 16 * uint8(hi));
-            s[i*2] = char(hi);
-            s[i*2+1] = char(lo);
+            s[i*2] = convertToChar(hi);
+            s[i*2+1] = convertToChar(lo);
         }
         out = s;
     }
