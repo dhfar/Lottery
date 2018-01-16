@@ -118,3 +118,26 @@ contract('BuyPixelWarsCoins', function(accounts) {
     });
 });
 
+contract('BuyPixelWarsCoins', function(accounts) {
+    it("Тест: начисление/списание игровой валюты", async () => {
+        const pixelWars =  await PW.deployed()
+        await pixelWars.createAccount("mail@mail.ru", "petrovich");
+        await pixelWars.createCharacter("Petrivich");
+
+        await pixelWars.accrualPixelWarsCoins(1000, 0);
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 1000, "Начислено 1000 монет");
+
+        await pixelWars.accrualPixelWarsCoins(10000, 0);
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 11000, "Начислено 11000 монет");
+
+        await pixelWars.withdrawalPixelWarsCoins(1000, 0);
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 10000, "Начислено 1000 монет");
+
+        await pixelWars.withdrawalPixelWarsCoins(10000, 0);
+        var balance = await pixelWars.getAccountBalance();
+        assert.equal(balance, 0, "Начислено 10000 монет");
+    });
+});

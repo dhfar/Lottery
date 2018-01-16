@@ -364,4 +364,27 @@ contract PixelWars is Owned {
         }
         out = s;
     }
+    /*
+        Блок раздачи призов
+    */
+    /*
+        Начисление игровой валюты на учетную запись
+    */
+    function accrualPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
+        if(!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
+        accounts[msg.sender].pixelWarsCoin += pixelCount;
+        return true;
+    }
+    /*
+        Списание игровой валюты с учетной записи
+    */
+    function withdrawalPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
+        if(!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
+        if (accounts[msg.sender].pixelWarsCoin >= pixelCount){
+            accounts[msg.sender].pixelWarsCoin -= pixelCount;
+        } else {
+            accounts[msg.sender].pixelWarsCoin = 0;
+        }
+        return true;
+    }
 }
