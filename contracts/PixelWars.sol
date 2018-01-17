@@ -388,3 +388,7 @@ contract PixelWars is Owned {
         return true;
     }
 }
+
+/*
+ function getAccountBalance() - мы можем узнать баланс аккаунта только от имени его владельца? это может затруднить получение данных для других игроков
+*/
