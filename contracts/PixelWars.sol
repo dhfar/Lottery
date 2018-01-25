@@ -10,7 +10,7 @@ contract PixelWars is Owned {
     uint8 public decimals;
     uint256 public totalSupply;
 
-    uint public nextCharacterIndexToAssign = 0;
+    uint public nextCharacterIndexToAssign = 1;
     bool public allCharactersAssigned = false;
     uint public characterRemainingToAssign = 0;
 
@@ -35,6 +35,7 @@ contract PixelWars is Owned {
         bool isActivate; // активен/ неактивен
         uint pixelWarsCoin; // игровая валюта
         bool isCreated; //  создан
+        uint freeExperienceCoin; //свободный опыт
     }
     /*
         Описание персонажа
@@ -47,6 +48,9 @@ contract PixelWars is Owned {
         uint experienceCoin; // монеты для прокачки
         uint winCount; // количество побед
         uint gameCount; // количство игр
+        address tenant; // арендатор
+        bool isTenanted; // персонаж арендован
+        address possibleTenant; // возможный арендатор
     }
     /*
         Описание трофея
@@ -61,7 +65,7 @@ contract PixelWars is Owned {
     }
     // ключ адрес кошеля владельца, значение инфо об аккаунте
     mapping (address => Account) private accounts;
-    uint lastAccountIndex = 0;
+    uint public lastAccountIndex = 1;
     mapping (uint => address) private indexOfAccounts;
     /*
         Создание контракта
@@ -78,8 +82,8 @@ contract PixelWars is Owned {
     /*
         Создание аккаунта
     */
-    function createAccount(string userEmail, string userPassword) public returns (bool) {
-        if(accounts[msg.sender].isCreated) return false;
+    function createAccount(string userEmail, string userPassword) public returns (uint) {
+        if(accounts[msg.sender].isCreated) return 0;
         Account memory newAccount;
         newAccount.email = userEmail;
         newAccount.password = sha256(userPassword);
@@ -89,7 +93,7 @@ contract PixelWars is Owned {
         accounts[msg.sender] = newAccount;
         indexOfAccounts[lastAccountIndex] = msg.sender;
         lastAccountIndex++;
-        return true;
+        return (lastAccountIndex - 1);
     }
     /*
          Активация/деактивация аккаунта
@@ -103,14 +107,21 @@ contract PixelWars is Owned {
         indexAccount - идентификатор учетной записи
         string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, Character[] - список персонажей
     */
-    function getAccountInfoByIndex(uint indexAccount) public view onlyOwner returns (string, bool, uint, bool, address, uint[32]) {
-        return (accounts[indexOfAccounts[indexAccount]].email,
-        accounts[indexOfAccounts[indexAccount]].isActivate,
-        accounts[indexOfAccounts[indexAccount]].pixelWarsCoin,
-        accounts[indexOfAccounts[indexAccount]].isCreated,
-        indexOfAccounts[indexAccount],
-        getCharactersByIndex(indexAccount)
-        );
+    function getAccountInfoByIndex(uint indexAccount) public view returns (string, bool, uint, bool, address, uint[32], uint) {
+        if (msg.sender == owner || msg.sender == indexOfAccounts[indexAccount]) {
+            Account memory userAccount = accounts[indexOfAccounts[indexAccount]];
+            return (
+            userAccount.email,
+            userAccount.isActivate,
+            userAccount.pixelWarsCoin,
+            userAccount.isCreated,
+            indexOfAccounts[indexAccount],
+            getCharactersByIndex(indexAccount),
+            userAccount.freeExperienceCoin
+            );
+        }
+        uint[32] memory empty;
+        return ('', false, 0, false, 0x0, empty, 0);
     }
     /*
         Получить список идентификаторов персонажей по идентификатору учетной записи
@@ -153,20 +164,20 @@ contract PixelWars is Owned {
     /*
         Создание персонажа
     */
-    function createCharacter(string characterName) public returns (bool) {
+    function createCharacter(string characterName) public returns (uint) {
         // Аккаунта создан и активный
-        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return 0;
         // Персонажи ещё не закончились
-        if (allCharactersAssigned) return false;
+        if (allCharactersAssigned) return 0;
         // Персонаж ещё никому не принадлежит
-        if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return false;
+        if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return 0;
         // проверка на лимит персонажей
-        if (balanceOf[msg.sender] > maxCharacterOnAccount) return false;
+        if (balanceOf[msg.sender] > maxCharacterOnAccount) return 0;
         // Инициализируем нового персонажа
         Character memory newCharacter;
         newCharacter.name = characterName;
         var (skilsMask, error) = generateCharacterSkills();
-        if (error) return false;
+        if (error) return 0;
         newCharacter.skilsMask = skilsMask;
         newCharacter.isDeleted = false;
         newCharacter.experienceCoin = 0;
@@ -178,7 +189,7 @@ contract PixelWars is Owned {
         nextCharacterIndexToAssign++;
         // Баланс аккаунта увеличиваем
         balanceOf[msg.sender]++;
-        return true;
+        return (nextCharacterIndexToAssign - 1);
     }
     /*
         Удаление персонажа.
@@ -201,14 +212,18 @@ contract PixelWars is Owned {
         Получение инфо о персонаже по индексу
         владелец, ник, способности, маска способностей, флаг удаления, монеты для прокачки
     */
-    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint[32], uint[32], bool, uint) {
+    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint[32], uint[32], bool, uint, bool, address, address) {
+        Character memory userCharacter = characters[characterIndex];
         return (
         characterIndexToAddress[characterIndex],
-        characters[characterIndex].name,
-        characters[characterIndex].skils,
-        characters[characterIndex].skilsMask,
-        characters[characterIndex].isDeleted,
-        characters[characterIndex].experienceCoin
+        userCharacter.name,
+        userCharacter.skils,
+        userCharacter.skilsMask,
+        userCharacter.isDeleted,
+        userCharacter.experienceCoin,
+        userCharacter.isTenanted,
+        userCharacter.tenant,
+        userCharacter.possibleTenant
         );
     }
     /*
@@ -234,20 +249,30 @@ contract PixelWars is Owned {
     /*
         Увеличение уровня прокачки скила (на 1)
     */
-    function increaseSkillLevel(uint characterIndex, uint skillIndex) public returns (bool) {
+    function increaseSkillLevel(uint characterIndex, uint skillIndex, uint freeExperienceCoins) public returns (bool) {
         // Аккаунта создан и активный
         if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
         // Персонаж принадлежит вызвавшему функцию
         if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
         // Можно ли ещё качать эту способность
         if (characters[characterIndex].skils[skillIndex] >= characters[characterIndex].skilsMask[skillIndex]) return false;
+        // у персонажа есть необходимое кол-во монет опыта
+        if(accounts[msg.sender].freeExperienceCoin < freeExperienceCoins) return false;
         // Валидный скил индекс
         if(skillIndex < 0 || skillIndex > 32 ) return false;
         // Монеты для поднятия уровня скила
         uint experienceForNextLevel = 2 * (2 ** characters[characterIndex].skils[skillIndex]);
         // Есть ли нужное кол-во монет
-        if (characters[characterIndex].experienceCoin == 0 && characters[characterIndex].experienceCoin < experienceForNextLevel) return false;
-        characters[characterIndex].experienceCoin -= experienceForNextLevel;
+        uint hasExperienceCoins = characters[characterIndex].experienceCoin + freeExperienceCoins;
+        if (hasExperienceCoins == 0 && hasExperienceCoins < experienceForNextLevel) return false;
+        // Если монет для прокачки у персонажа хватает, тратим только их.
+        if(characters[characterIndex].experienceCoin >= experienceForNextLevel){
+            characters[characterIndex].experienceCoin -= experienceForNextLevel;
+        } else {
+            characters[characterIndex].experienceCoin = 0;
+            uint usedFreeExperience = freeExperienceCoins - (hasExperienceCoins - experienceForNextLevel);
+            accounts[msg.sender].freeExperienceCoin -= usedFreeExperience;
+        }
         characters[characterIndex].skils[skillIndex]++;
         return true;
     }
@@ -385,6 +410,33 @@ contract PixelWars is Owned {
         } else {
             accounts[msg.sender].pixelWarsCoin = 0;
         }
+        return true;
+    }
+    /*
+        Конвертация опыта персонажа в свободный опыт
+    */
+    function convertExperienceToFreeExperience(uint characterIndex, uint countCoinForCovert) public returns (bool) {
+        // Аккаунта создан и активный
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
+        // Персонаж принадлежит вызвавшему функцию
+        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // у персонажа есть необходимое кол-во монет опыта
+        if(characters[characterIndex].experienceCoin < countCoinForCovert) return false;
+        characters[characterIndex].experienceCoin -= countCoinForCovert;
+        accounts[msg.sender].freeExperienceCoin += (countCoinForCovert / 2);
+        return true;
+    }
+    /*
+    Задать предполагаемого арендатора персонажа
+*/
+    function setPossibleTenant(uint characterIndex, address tenant) public returns (bool) {
+        // Аккаунта создан и активный
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
+        // Персонаж принадлежит вызвавшему функцию
+        if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // Персонаж не в аренде
+        if(characters[characterIndex].isTenanted) return false;
+        characters[characterIndex].possibleTenant = tenant;
         return true;
     }
 }
