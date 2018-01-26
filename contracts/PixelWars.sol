@@ -30,6 +30,7 @@ contract PixelWars is Owned {
         Описание аккаунта
     */
     struct Account {
+        uint id; // идентификатор
         string email; // почта
         bytes32 password; // хэшпароля
         bool isActivate; // активен/ неактивен
@@ -41,6 +42,7 @@ contract PixelWars is Owned {
         Описание персонажа
     */
     struct Character {
+        uint id; // идентификатор
         string name; // ник
         uint[32] skils; // способности
         uint[32] skilsMask; // верхний предел прокачки персонажа
@@ -65,7 +67,7 @@ contract PixelWars is Owned {
     }
     // ключ адрес кошеля владельца, значение инфо об аккаунте
     mapping (address => Account) private accounts;
-    uint public lastAccountIndex = 1;
+    uint public nextAccountIndex = 1;
     mapping (uint => address) private indexOfAccounts;
     /*
         Создание контракта
@@ -82,18 +84,21 @@ contract PixelWars is Owned {
     /*
         Создание аккаунта
     */
-    function createAccount(string userEmail, string userPassword) public returns (uint) {
-        if(accounts[msg.sender].isCreated) return 0;
+    function createAccount(string userEmail, string userPassword) public returns (uint accountIndex) {
+        accountIndex = 0;
+        if(accounts[msg.sender].isCreated) return accountIndex;
         Account memory newAccount;
+        newAccount.id = nextAccountIndex;
         newAccount.email = userEmail;
         newAccount.password = sha256(userPassword);
         newAccount.isActivate = true;
         newAccount.pixelWarsCoin = 0;
         newAccount.isCreated = true;
         accounts[msg.sender] = newAccount;
-        indexOfAccounts[lastAccountIndex] = msg.sender;
-        lastAccountIndex++;
-        return (lastAccountIndex - 1);
+        indexOfAccounts[nextAccountIndex] = msg.sender;
+        accountIndex = nextAccountIndex;
+        nextAccountIndex++;
+        return accountIndex;
     }
     /*
          Активация/деактивация аккаунта
@@ -116,17 +121,22 @@ contract PixelWars is Owned {
             userAccount.pixelWarsCoin,
             userAccount.isCreated,
             indexOfAccounts[indexAccount],
-            getCharactersByIndex(indexAccount),
+            getCharacterListByAccountIndex(indexAccount),
             userAccount.freeExperienceCoin
             );
         }
         uint[32] memory empty;
         return ('', false, 0, false, 0x0, empty, 0);
     }
+
+    function getAccountInfo() public view returns (string, bool, uint, bool, address, uint[32], uint) {
+        return getAccountInfoByIndex(accounts[msg.sender].id);
+    }
+
     /*
         Получить список идентификаторов персонажей по идентификатору учетной записи
     */
-    function getCharactersByIndex(uint indexAccount) public view onlyOwner returns (uint[32]){
+    function getCharacterListByAccountIndex(uint indexAccount) public view onlyOwner returns (uint[32]){
         uint[32] memory characterByIndexAccount;
         uint characterCount = 0;
         for (uint i = 0; i < nextCharacterIndexToAssign; i++){
@@ -164,20 +174,21 @@ contract PixelWars is Owned {
     /*
         Создание персонажа
     */
-    function createCharacter(string characterName) public returns (uint) {
+    function createCharacter(string characterName) public returns (bool, uint) {
         // Аккаунта создан и активный
-        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return 0;
+        if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return (false, 0);
         // Персонажи ещё не закончились
-        if (allCharactersAssigned) return 0;
+        if (allCharactersAssigned) return (false, 0);
         // Персонаж ещё никому не принадлежит
-        if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return 0;
+        if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return (false, 0);
         // проверка на лимит персонажей
-        if (balanceOf[msg.sender] > maxCharacterOnAccount) return 0;
+        if (balanceOf[msg.sender] > maxCharacterOnAccount) return (false, 0);
         // Инициализируем нового персонажа
         Character memory newCharacter;
         newCharacter.name = characterName;
         var (skilsMask, error) = generateCharacterSkills();
-        if (error) return 0;
+        if (error) return (false, 0);
+        newCharacter.id = nextCharacterIndexToAssign;
         newCharacter.skilsMask = skilsMask;
         newCharacter.isDeleted = false;
         newCharacter.experienceCoin = 0;
@@ -189,7 +200,7 @@ contract PixelWars is Owned {
         nextCharacterIndexToAssign++;
         // Баланс аккаунта увеличиваем
         balanceOf[msg.sender]++;
-        return (nextCharacterIndexToAssign - 1);
+        return (true, (nextCharacterIndexToAssign - 1));
     }
     /*
         Удаление персонажа.
