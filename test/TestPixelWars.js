@@ -41,11 +41,11 @@ contract('CreateAccountAndCreateCharacter', function() {
     it("Тест: Создание учетной записи и персонажа", async () => {
         const pixelWars =  await PW.deployed()
         await pixelWars.createAccount("mail@mail.ru", "petrovich");
-        var newAccount = await pixelWars.getAccountInfoByIndex(0);
+        var newAccount = await pixelWars.getAccountInfoByIndex(1);
         assert.ok(newAccount[1], true, "Учетная запись создана");
         assert.ok(newAccount[3], true, "Учетная запись активна");
         await pixelWars.createCharacter("Petrivich")
-        var newCharacter = await pixelWars.getCharacterByIndex(0);
+        var newCharacter = await pixelWars.getCharacterByIndex(1);
         // console.log(newCharacter);
         assert.equal(newCharacter[1], "Petrivich", "Петрович создан");
         assert.notEqual(newCharacter[1], "0x0", "Петрович создан");
@@ -58,8 +58,8 @@ contract('IncreaseExperienceCoinAndSkillLevelUp', function() {
         const pixelWars =  await PW.deployed()
         await pixelWars.createAccount("mail@mail.ru", "petrovich");
         await pixelWars.createCharacter("Petrivich");
-        await pixelWars.increaseExperienceCoin(0, 100);
-        var newCharacter = await pixelWars.getCharacterByIndex(0);
+        await pixelWars.increaseExperienceCoin(1, 100);
+        var newCharacter = await pixelWars.getCharacterByIndex(1);
         // console.log(newCharacter[5]);
         assert.equal(newCharacter[5], 100, "Монеты для прокачки начислены");
         var skillLevel = newCharacter[2];
@@ -73,9 +73,9 @@ contract('IncreaseExperienceCoinAndSkillLevelUp', function() {
         }
         var coinsForLevelUp = 2 * Math.pow(2, skillLevel[skillIndex]);
         var lvlAfterIncrease = skillLevel[skillIndex]
-        await pixelWars.increaseExperienceCoin(0, coinsForLevelUp);
-        await pixelWars.increaseSkillLevel(0, skillIndex);
-        newCharacter = await pixelWars.getCharacterByIndex(0);
+        await pixelWars.increaseExperienceCoin(1, coinsForLevelUp);
+        await pixelWars.increaseSkillLevel(1, skillIndex, 0);
+        newCharacter = await pixelWars.getCharacterByIndex(1);
         assert.equal(parseInt(newCharacter[2][skillIndex]), parseInt(lvlAfterIncrease, 10) + 1, "Способность успешно прокачана");
 });
 });
@@ -124,19 +124,19 @@ contract('BuyPixelWarsCoins', function(accounts) {
         await pixelWars.createAccount("mail@mail.ru", "petrovich");
         await pixelWars.createCharacter("Petrivich");
 
-        await pixelWars.accrualPixelWarsCoins(1000, 0);
+        await pixelWars.accrualPixelWarsCoins(1000, 1);
         var balance = await pixelWars.getAccountBalance();
         assert.equal(balance, 1000, "Начислено 1000 монет");
 
-        await pixelWars.accrualPixelWarsCoins(10000, 0);
+        await pixelWars.accrualPixelWarsCoins(10000, 1);
         var balance = await pixelWars.getAccountBalance();
         assert.equal(balance, 11000, "Начислено 11000 монет");
 
-        await pixelWars.withdrawalPixelWarsCoins(1000, 0);
+        await pixelWars.withdrawalPixelWarsCoins(1000, 1);
         var balance = await pixelWars.getAccountBalance();
         assert.equal(balance, 10000, "Начислено 1000 монет");
 
-        await pixelWars.withdrawalPixelWarsCoins(10000, 0);
+        await pixelWars.withdrawalPixelWarsCoins(10000, 1);
         var balance = await pixelWars.getAccountBalance();
         assert.equal(balance, 0, "Начислено 10000 монет");
     });
