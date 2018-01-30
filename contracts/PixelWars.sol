@@ -110,9 +110,9 @@ contract PixelWars is Owned {
     /*
         Получить информацию об учетной записи по идентификатору
         indexAccount - идентификатор учетной записи
-        string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, Character[] - список персонажей
+        string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, int - свободный опыт
     */
-    function getAccountInfoByIndex(uint indexAccount) public view returns (string, bool, uint, bool, address, uint[32], uint) {
+    function getAccountInfoByIndex(uint indexAccount) public view returns (string, bool, uint, bool, address, uint) {
         if (msg.sender == owner || msg.sender == indexOfAccounts[indexAccount]) {
             Account memory userAccount = accounts[indexOfAccounts[indexAccount]];
             return (
@@ -121,15 +121,12 @@ contract PixelWars is Owned {
             userAccount.pixelWarsCoin,
             userAccount.isCreated,
             indexOfAccounts[indexAccount],
-            getCharacterListByAccountIndex(indexAccount),
             userAccount.freeExperienceCoin
             );
         }
-        uint[32] memory empty;
-        return ('', false, 0, false, 0x0, empty, 0);
     }
 
-    function getAccountInfo() public view returns (string, bool, uint, bool, address, uint[32], uint) {
+    function getAccountInfo() public view returns (string, bool, uint, bool, address, uint) {
         return getAccountInfoByIndex(accounts[msg.sender].id);
     }
 
@@ -290,7 +287,7 @@ contract PixelWars is Owned {
     /*
         Генерация уровня прокачки скилов нового персонажа.
     */
-    function generateCharacterSkills() public view onlyOwner returns (uint[32], bool) {
+    function generateCharacterSkills() public view returns (uint[32], bool) {
         bool error = false;
         uint[32] memory skillsLevel;
         bytes32 lastBlockHash = block.blockhash(block.number - 1);
