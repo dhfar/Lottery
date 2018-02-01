@@ -16,8 +16,6 @@ contract PixelWars is Owned {
 
     uint public pixelWarsCoinPrice = 10000;
 
-    uint maxCharacterOnAccount = 32;
-
     mapping (uint => address) public characterIndexToAddress;
     /* This creates an array with all balances */
     mapping (address => uint256) public balanceOf;
@@ -94,6 +92,7 @@ contract PixelWars is Owned {
         newAccount.isActivate = true;
         newAccount.pixelWarsCoin = 0;
         newAccount.isCreated = true;
+        newAccount.freeExperienceCoin = 20; // подгон от на первые шаги
         accounts[msg.sender] = newAccount;
         indexOfAccounts[nextAccountIndex] = msg.sender;
         accountIndex = nextAccountIndex;
@@ -129,21 +128,6 @@ contract PixelWars is Owned {
     function getAccountInfo() public view returns (string, bool, uint, bool, address, uint) {
         return getAccountInfoByIndex(accounts[msg.sender].id);
     }
-
-    /*
-        Получить список идентификаторов персонажей по идентификатору учетной записи
-    */
-    function getCharacterListByAccountIndex(uint indexAccount) public view onlyOwner returns (uint[32]){
-        uint[32] memory characterByIndexAccount;
-        uint characterCount = 0;
-        for (uint i = 0; i < nextCharacterIndexToAssign; i++){
-            if(characterIndexToAddress[i] == indexOfAccounts[indexAccount]){
-                characterByIndexAccount[characterCount] = i;
-                characterCount++;
-            }
-        }
-        return characterByIndexAccount;
-    }
     /*
         Получить баланс монет аккаунта
     */
@@ -178,8 +162,6 @@ contract PixelWars is Owned {
         if (allCharactersAssigned) return (false, 0);
         // Персонаж ещё никому не принадлежит
         if(characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return (false, 0);
-        // проверка на лимит персонажей
-        if (balanceOf[msg.sender] > maxCharacterOnAccount) return (false, 0);
         // Инициализируем нового персонажа
         Character memory newCharacter;
         newCharacter.name = characterName;
@@ -233,6 +215,32 @@ contract PixelWars is Owned {
         userCharacter.tenant,
         userCharacter.possibleTenant
         );
+    }
+    /*
+        Получение идентификатора первого персонажа пользователя.
+        Если персонажей нет вернет 0.
+    */
+    function getFirstUserCharacterIndex() public view returns (uint) {
+        for(uint i = 1; i < nextCharacterIndexToAssign; i++){
+            if(characterIndexToAddress[i] == msg.sender){
+                return i;
+            }
+        }
+    }
+    /*
+        Получение идентификатора следующего персонажа пользователя.
+        previousCharacterIndex - предыдущий персонаж пользователя.
+        Если previousCharacterIndex не принадлежит вызвавшему функцию вернет 0.
+        Если персонажей нет вернет 0.
+    */
+    function getNextUserCharacterIndex(uint previousCharacterIndex) public view returns (uint) {
+        if(characterIndexToAddress[previousCharacterIndex] == msg.sender){
+            for(uint i = previousCharacterIndex + 1; i < nextCharacterIndexToAssign; i++){
+                if(characterIndexToAddress[i] == msg.sender){
+                    return i;
+                }
+            }
+        }
     }
     /*
         Получение статистики персонажа
