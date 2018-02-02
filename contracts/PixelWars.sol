@@ -27,8 +27,22 @@ contract PixelWars is Owned {
     /*
         События
     */
+    // создание учетной записи
     event CreateAccount(address indexed _creator, uint _account);
+    // создание персонажа
     event CreateCharacter(address indexed _creator, uint _character);
+    // покупка игровой валюты
+    event BuyPixelWarsCoins(address indexed _buyer, uint _coins);
+    // начисление опыта персонажу
+    event IncreaseExperienceCoin(address indexed _executor, uint _characterIndex, uint _experienceCoin);
+    // прокачка скила
+    event IncreaseSkillLevel(address indexed _executor, uint _characterIndex, uint _skillIndex, uint _experienceCoins, uint _freeExperienceCoins);
+    // начисление игровой валюты
+    event AccrualPixelWarsCoins(address indexed _executor, uint _pixelCount, uint _accountIndex);
+    // списание игровой валюты
+    event WithdrawalPixelWarsCoins(address indexed _executor, uint _pixelCount, uint _accountIndex);
+
+
     /*
         Описание аккаунта
     */
@@ -153,6 +167,7 @@ contract PixelWars is Owned {
         if(msg.value <= 0) return false;
         uint coins = msg.value / pixelWarsCoinPrice;
         accounts[msg.sender].pixelWarsCoin += coins;
+        BuyPixelWarsCoins(msg.sender, coins);
         return true;
     }
     /*
@@ -264,6 +279,7 @@ contract PixelWars is Owned {
         if(characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
         // Увеличиваем колиство монет прокачки персонажа
         characters[characterIndex].experienceCoin += experienceCoin;
+        IncreaseExperienceCoin(msg.sender, characterIndex, experienceCoin);
         return true;
     }
     /*
@@ -294,6 +310,7 @@ contract PixelWars is Owned {
             accounts[msg.sender].freeExperienceCoin -= usedFreeExperience;
         }
         characters[characterIndex].skils[skillIndex]++;
+        IncreaseSkillLevel(msg.sender, characterIndex, skillIndex, experienceForNextLevel, freeExperienceCoins);
         return true;
     }
     /*
@@ -418,6 +435,7 @@ contract PixelWars is Owned {
     function accrualPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
         if(!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
         accounts[msg.sender].pixelWarsCoin += pixelCount;
+        AccrualPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
     /*
@@ -430,6 +448,7 @@ contract PixelWars is Owned {
         } else {
             accounts[msg.sender].pixelWarsCoin = 0;
         }
+        WithdrawalPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
     /*
@@ -447,8 +466,8 @@ contract PixelWars is Owned {
         return true;
     }
     /*
-    Задать предполагаемого арендатора персонажа
-*/
+        Задать предполагаемого арендатора персонажа
+    */
     function setPossibleTenant(uint characterIndex, address tenant) public returns (bool) {
         // Аккаунта создан и активный
         if(!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
