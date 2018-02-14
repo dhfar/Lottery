@@ -9,20 +9,13 @@ contract('GenerateCharacterSkillMask', function() {
     // console.log(skillsMask);
     assert.equal(skillsMask[1], false, "Массив способностей сформирован успешно");
     var levelArray = skillsMask[0];
-    assert.equal(levelArray.length, 8, "Кол-во способностей 8");
+    assert.equal(levelArray.length, 32, "Кол-во способностей 32");
     var isError = false;
     for(var i = 0; i < levelArray.length; i++){
-        for(var j = 0; j < levelArray[i].length; j++) {
-            if (levelArray[i][j] < 0 || levelArray[i][j] > 15) {
-                isError = true;
-            }
+        if (levelArray[i] < 0 || levelArray[i] > 15) {
+            isError = true;
         }
     }
-    // for(var i = 0; i < levelArray.length; i++){
-    //     for(var j = 0; j < levelArray[i].length; j++){
-    //         console.log("[" + i + "]" + "[" + j + "]" + " = " + levelArray[i][j]);
-    //     }
-    // }
     assert.equal(isError, false, "Массив способностей сформирован в диапазоне от 0 до 15");
     });
 });
@@ -37,11 +30,8 @@ contract('GetWinningPixel', function() {
     for(var i = 0; i < 32; i++){
         var maxValue = Math.pow(16, i);
         var winPixel = await pixelWars.getWinningPixel(i);
-        // console.log(winPixel[1]);
-        // console.log(winPixel[2]);
         if(winPixel[0] < 1 || winPixel[0] > maxValue){
             isError = true;
-            // console.log(winPixel[0]);
         }
     }
     assert.equal(isError, false, "Номера ячеек полученные в результате теста попадают в верный диапазон");
@@ -80,22 +70,18 @@ contract('IncreaseExperienceCoinAndSkillLevelUp', function() {
         var skillLevel = newCharacter[2];
         var skillMask = newCharacter[3];
         var skillIndex = -1;
-        var paramIndex = -1;
-        for(var i = 0; i < 8; i++){
-            for(var j = 0; j < 8; i++) {
-                if (skillLevel[i][j] < skillMask[i][j]) {
+        for(var i = 0; i < 32; i++){
+                if (skillLevel[i] < skillMask[i]) {
                     skillIndex = i;
-                    paramIndex = j;
                     break;
                 }
-            }
         }
         var coinsForLevelUp = 2 * Math.pow(2, skillLevel[skillIndex]);
         var lvlAfterIncrease = skillLevel[skillIndex]
         await pixelWars.increaseExperienceCoin(1, coinsForLevelUp);
-        await pixelWars.increaseSkillLevel(1, skillIndex, paramIndex, 0);
+        await pixelWars.increaseSkillLevel(1, skillIndex, 0);
         newCharacter = await pixelWars.getCharacterByIndex(1);
-        assert.equal(parseInt(newCharacter[2][skillIndex][paramIndex]), parseInt(lvlAfterIncrease, 10) + 1, "Способность успешно прокачана");
+        assert.equal(parseInt(newCharacter[2][skillIndex]), parseInt(lvlAfterIncrease, 10) + 1, "Способность успешно прокачана");
 });
 });
 

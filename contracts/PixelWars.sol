@@ -65,8 +65,8 @@ contract PixelWars is Owned {
     struct Character {
         uint id; // идентификатор
         string name; // ник
-        uint8[8][8] skils; // способности
-        uint8[8][8] skilsMask; // верхний предел прокачки персонажа
+        uint8[32] skils; // способности
+        uint8[32] skilsMask; // верхний предел прокачки персонажа
         bool isDeleted; // флаг удаления
         uint experienceCoin; // монеты для прокачки
         uint winCount; // количество побед
@@ -276,7 +276,7 @@ contract PixelWars is Owned {
         Получение инфо о персонаже по индексу
         владелец, ник, способности, маска способностей, флаг удаления, монеты для прокачки
     */
-    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint8[8][8], uint8[8][8], bool, uint, bool, address, address) {
+    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint8[32], uint8[32], bool, uint, bool, address, address) {
         Character memory userCharacter = characters[characterIndex];
         return (
         characterIndexToAddress[characterIndex],
@@ -346,21 +346,19 @@ contract PixelWars is Owned {
     /*
         Увеличение уровня прокачки скила (на 1)
     */
-    function increaseSkillLevel(uint characterIndex, uint skillIndex, uint paramIndex, uint freeExperienceCoins) public returns (bool) {
+    function increaseSkillLevel(uint characterIndex, uint skillIndex, uint freeExperienceCoins) public returns (bool) {
         // Аккаунта создан и активный
         if (!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
         // Персонаж принадлежит вызвавшему функцию
         if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
         // Валидный скил индекс
-        if (skillIndex < 0 || skillIndex > 8) return false;
-        // Валидный индекс параметра
-        if (paramIndex < 0 || paramIndex > 8) return false;
+        if (skillIndex < 0 || skillIndex > 32) return false;
         // Можно ли ещё качать эту способность
-        if (characters[characterIndex].skils[skillIndex][paramIndex] >= characters[characterIndex].skilsMask[skillIndex][paramIndex]) return false;
+        if (characters[characterIndex].skils[skillIndex] >= characters[characterIndex].skilsMask[skillIndex]) return false;
         // у персонажа есть необходимое кол-во монет опыта
         if (accounts[msg.sender].freeExperienceCoin < freeExperienceCoins) return false;
         // Монеты для поднятия уровня скила
-        uint experienceForNextLevel = 2 * (2 ** uint(characters[characterIndex].skils[skillIndex][paramIndex]));
+        uint experienceForNextLevel = 2 * (2 ** uint(characters[characterIndex].skils[skillIndex]));
         // Есть ли нужное кол-во монет
         uint hasExperienceCoins = characters[characterIndex].experienceCoin + freeExperienceCoins;
         if (hasExperienceCoins == 0 && hasExperienceCoins < experienceForNextLevel) return false;
@@ -372,34 +370,15 @@ contract PixelWars is Owned {
             uint usedFreeExperience = freeExperienceCoins - (hasExperienceCoins - experienceForNextLevel);
             accounts[msg.sender].freeExperienceCoin -= usedFreeExperience;
         }
-        characters[characterIndex].skils[skillIndex][paramIndex]++;
+        characters[characterIndex].skils[skillIndex]++;
         IncreaseSkillLevel(msg.sender, characterIndex, skillIndex, experienceForNextLevel, freeExperienceCoins);
         return true;
     }
     /*
         Генерация уровня прокачки скилов нового персонажа.
     */
-    function generateCharacterSkillMask() public view returns (uint8[8][8] skillsMask, bool) {
-        uint skillIndex = 0;
-        uint paramIndex = 0;
-        for(uint i = 1; i < 3; i++){
-            uint blockNumber = block.number;
-            if(blockNumber > i)
-            {
-                blockNumber = blockNumber - i;
-            }
-            var (uintArray, error) = convertBlockHashToUintHexArray(blockNumber);
-            if (error) return (skillsMask, error);
-            for(uint j = 0; j < 32; j++){
-                skillsMask[skillIndex][paramIndex] = uintArray[j];
-                paramIndex++;
-                if(paramIndex >= 8){
-                    skillIndex++;
-                    paramIndex = 0;
-                }
-            }
-        }
-        return (skillsMask, false);
+    function generateCharacterSkillMask() public view returns (uint8[32], bool) {
+        return convertBlockHashToUintHexArray(block.number - 1);
     }
 
     function convertBlockHashToUintHexArray(uint blockNumber) public view returns (uint8[32] skillsLevel, bool error) {
