@@ -65,8 +65,8 @@ contract PixelWars is Owned {
     struct Character {
         uint id; // идентификатор
         string name; // ник
-        uint8[8][16] skils; // способности
-        uint8[8][16] skilsMask; // верхний предел прокачки персонажа
+        uint8[8][8] skils; // способности
+        uint8[8][8] skilsMask; // верхний предел прокачки персонажа
         bool isDeleted; // флаг удаления
         uint experienceCoin; // монеты для прокачки
         uint winCount; // количество побед
@@ -172,10 +172,11 @@ contract PixelWars is Owned {
         indexAccount - идентификатор учетной записи
         string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, int - свободный опыт
     */
-    function getAccountInfoByIndex(uint indexAccount) public view returns (string, bool, uint, bool, address, uint) {
+    function getAccountInfoByIndex(uint indexAccount) public view returns (uint, string, bool, uint, bool, address, uint) {
         if (msg.sender == owner || msg.sender == indexOfAccounts[indexAccount]) {
             Account memory userAccount = accounts[indexOfAccounts[indexAccount]];
             return (
+            userAccount.id,
             userAccount.email,
             userAccount.isActivate,
             userAccount.pixelWarsCoin,
@@ -185,9 +186,19 @@ contract PixelWars is Owned {
             );
         }
     }
-
-    function getAccountInfo() public view returns (string, bool, uint, bool, address, uint) {
+    /*
+        Получить информацию об учетной записи по идентификатору
+        string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, int - свободный опыт
+    */
+    function getAccountInfo() public view returns (uint, string, bool, uint, bool, address, uint) {
         return getAccountInfoByIndex(accounts[msg.sender].id);
+    }
+    /*
+        Получить идентификатор учетной записи по адресу владельца
+        uint - id учетной записи
+    */
+    function getAccountIndexByAddress(address ownerAccount) public view returns (uint){
+        return accounts[ownerAccount].id;
     }
     /*
         Получить баланс монет аккаунта
@@ -265,7 +276,7 @@ contract PixelWars is Owned {
         Получение инфо о персонаже по индексу
         владелец, ник, способности, маска способностей, флаг удаления, монеты для прокачки
     */
-    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint8[8][16], uint8[8][16], bool, uint, bool, address, address) {
+    function getCharacterByIndex(uint characterIndex) public view returns (address, string, uint8[8][8], uint8[8][8], bool, uint, bool, address, address) {
         Character memory userCharacter = characters[characterIndex];
         return (
         characterIndexToAddress[characterIndex],
@@ -341,7 +352,7 @@ contract PixelWars is Owned {
         // Персонаж принадлежит вызвавшему функцию
         if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
         // Валидный скил индекс
-        if (skillIndex < 0 || skillIndex > 16) return false;
+        if (skillIndex < 0 || skillIndex > 8) return false;
         // Валидный индекс параметра
         if (paramIndex < 0 || paramIndex > 8) return false;
         // Можно ли ещё качать эту способность
@@ -368,10 +379,10 @@ contract PixelWars is Owned {
     /*
         Генерация уровня прокачки скилов нового персонажа.
     */
-    function generateCharacterSkillMask() public view returns (uint8[8][16] skillsMask, bool) {
+    function generateCharacterSkillMask() public view returns (uint8[8][8] skillsMask, bool) {
         uint skillIndex = 0;
         uint paramIndex = 0;
-        for(uint i = 1; i < 5; i++){
+        for(uint i = 1; i < 3; i++){
             uint blockNumber = block.number;
             if(blockNumber > i)
             {
@@ -507,7 +518,7 @@ contract PixelWars is Owned {
     */
     function accrualPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
         if (!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
-        accounts[msg.sender].pixelWarsCoin += pixelCount;
+        accounts[indexOfAccounts[accountIndex]].pixelWarsCoin += pixelCount;
         AccrualPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
@@ -516,10 +527,10 @@ contract PixelWars is Owned {
     */
     function withdrawalPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
         if (!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
-        if (accounts[msg.sender].pixelWarsCoin >= pixelCount) {
-            accounts[msg.sender].pixelWarsCoin -= pixelCount;
+        if (accounts[indexOfAccounts[accountIndex]].pixelWarsCoin >= pixelCount) {
+            accounts[indexOfAccounts[accountIndex]].pixelWarsCoin -= pixelCount;
         } else {
-            accounts[msg.sender].pixelWarsCoin = 0;
+            return false;
         }
         WithdrawalPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;

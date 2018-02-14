@@ -9,7 +9,7 @@ contract('GenerateCharacterSkillMask', function() {
     // console.log(skillsMask);
     assert.equal(skillsMask[1], false, "Массив способностей сформирован успешно");
     var levelArray = skillsMask[0];
-    assert.equal(levelArray.length, 16, "Кол-во способностей 32");
+    assert.equal(levelArray.length, 8, "Кол-во способностей 8");
     var isError = false;
     for(var i = 0; i < levelArray.length; i++){
         for(var j = 0; j < levelArray[i].length; j++) {
@@ -48,7 +48,7 @@ contract('GetWinningPixel', function() {
 });
 });
 
-contract('CreateAccountAndCreateCharacter', function() {
+contract('CreateAccountAndCreateCharacter', function(accounts) {
     it("Тест: Создание учетной записи и персонажа", async () => {
         const pixelWars =  await PW.deployed()
         await pixelWars.createAccount("mail@mail.ru", "petrovich");
@@ -56,6 +56,8 @@ contract('CreateAccountAndCreateCharacter', function() {
         assert.ok(newAccount[1], true, "Учетная запись создана");
         assert.ok(newAccount[3], true, "Учетная запись активна");
 
+        var accountId = await pixelWars.getAccountIndexByAddress(accounts[0]);
+        assert.equal(accountId, "1", "Id получен верно");
 
         await pixelWars.createCharacter("Petrivich")
         var newCharacter = await pixelWars.getCharacterByIndex(1);
@@ -79,7 +81,7 @@ contract('IncreaseExperienceCoinAndSkillLevelUp', function() {
         var skillMask = newCharacter[3];
         var skillIndex = -1;
         var paramIndex = -1;
-        for(var i = 0; i < 16; i++){
+        for(var i = 0; i < 8; i++){
             for(var j = 0; j < 8; i++) {
                 if (skillLevel[i][j] < skillMask[i][j]) {
                     skillIndex = i;
