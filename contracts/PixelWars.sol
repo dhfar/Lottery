@@ -239,7 +239,9 @@ contract PixelWars is Owned {
         Character memory newCharacter;
         newCharacter.name = characterName;
         newCharacter.id = nextCharacterIndexToAssign;
-        var(generateSkilsMask, error) = generateCharacterSkillMask();
+        uint8[32] memory generateSkilsMask;
+        bool error;
+        (generateSkilsMask, error) = generateCharacterSkillMask();
         if(error) return 0;
         newCharacter.skilsMask = generateSkilsMask;
         newCharacter.isDeleted = false;
@@ -291,24 +293,13 @@ contract PixelWars is Owned {
         );
     }
     /*
-        Получение идентификатора первого персонажа пользователя.
-        Если персонажей нет вернет 0.
-    */
-    function getFirstUserCharacterIndex() public view returns (uint) {
-        for (uint i = 1; i < nextCharacterIndexToAssign; i++) {
-            if (characterIndexToAddress[i] == msg.sender) {
-                return i;
-            }
-        }
-    }
-    /*
         Получение идентификатора следующего персонажа пользователя.
         previousCharacterIndex - предыдущий персонаж пользователя.
         Если previousCharacterIndex не принадлежит вызвавшему функцию вернет 0.
         Если персонажей нет вернет 0.
     */
     function getNextUserCharacterIndex(uint previousCharacterIndex) public view returns (uint) {
-        if (characterIndexToAddress[previousCharacterIndex] == msg.sender) {
+        if (characterIndexToAddress[previousCharacterIndex] == msg.sender || previousCharacterIndex == 0) {
             for (uint i = previousCharacterIndex + 1; i < nextCharacterIndexToAssign; i++) {
                 if (characterIndexToAddress[i] == msg.sender) {
                     return i;
@@ -385,8 +376,10 @@ contract PixelWars is Owned {
         bytes32 lastBlockHash = block.blockhash(blockNumber);
         string memory s = bytes32ToString(lastBlockHash);
         bytes memory b = bytes(s);
+        uint8 convertValue;
+        bool resultSuccess;
         for (uint i = 0; i < 32; i++) {
-            var (convertValue, resultSuccess) = byteToUint(b[i]);
+            (convertValue, resultSuccess) = byteToUint(b[i]);
             if (resultSuccess) {
                 skillsLevel[i] = convertValue;
             } else {
@@ -401,15 +394,15 @@ contract PixelWars is Owned {
     */
     function getWinningPixel(uint characterCount) public view onlyOwner returns (uint, bool, string) {
         bool error = false;
-
         bytes32 lastBlockHash = block.blockhash(block.number - 1);
         string memory s = bytes32ToString(lastBlockHash);
         bytes memory b = bytes(s);
-
         uint characterConvertCount = 0;
         uint resultValue = 1;
+        uint8 convertValue;
+        bool resultSuccess;
         for (uint i = 0; i < characterCount; i++) {
-            var (convertValue, resultSuccess) = byteToUint(b[i]);
+            (convertValue, resultSuccess) = byteToUint(b[i]);
             if (resultSuccess) {
                 convertValue += 1;
                 resultValue *= uint(convertValue);
