@@ -63,10 +63,7 @@ contract('CreateAccountAndCreateCharacter', function(accounts) {
         nextUserCharacterIndex = await pixelWars.getNextUserCharacterIndex(1);
         // console.log(nextUserCharacterIndex);
         assert.equal(nextUserCharacterIndex, 0, "Других персонажей нет");
-
-
-
-});
+    });
 });
 
 contract('IncreaseExperienceCoinAndSkillLevelUp', function() {
