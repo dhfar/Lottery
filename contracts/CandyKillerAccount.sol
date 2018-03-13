@@ -152,6 +152,12 @@ contract CandyKillerAccount is Owned {
         return true;
     }
     /*
+        Учетная запись создана и не заблокирована
+    */
+    function isCreateAndActive(address userAddress) public view returns (bool) {
+        return (accounts[userAddress].isCreated && accounts[userAddress].isActivate);
+    }
+    /*
         Конвертация опыта персонажа в свободный опыт
         ToDo будет после реализации контракта отряда
     */
