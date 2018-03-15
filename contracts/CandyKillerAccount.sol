@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.20;
 
 import "./Owned.sol";
 
@@ -27,8 +27,6 @@ contract CandyKillerAccount is Owned {
     */
     // создание учетной записи
     event CreateAccount(address indexed _creator, uint _account);
-    // создание персонажа
-    event CreateCharacter(address indexed _creator, uint _character);
     // покупка игровой валюты
     event BuyPixelWarsCoins(address indexed _buyer, uint _coins);
     // начисление игровой валюты
@@ -53,7 +51,7 @@ contract CandyKillerAccount is Owned {
         newAccount.isCreated = true;
         accounts[msg.sender] = newAccount;
         indexOfAccounts[nextAccountIndex] = msg.sender;
-        emit CreateAccount(msg.sender, nextAccountIndex);
+        CreateAccount(msg.sender, nextAccountIndex);
         nextAccountIndex++;
         return nextAccountIndex - 1;
     }
@@ -126,7 +124,7 @@ contract CandyKillerAccount is Owned {
         if (msg.value <= 0) return false;
         uint coins = msg.value / pixelWarsCoinPrice;
         accounts[msg.sender].pixelWarsCoin += coins;
-        emit BuyPixelWarsCoins(msg.sender, coins);
+        BuyPixelWarsCoins(msg.sender, coins);
         return true;
     }
     /*
@@ -135,7 +133,7 @@ contract CandyKillerAccount is Owned {
     function accrualPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
         if (!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
         accounts[indexOfAccounts[accountIndex]].pixelWarsCoin += pixelCount;
-        emit AccrualPixelWarsCoins(msg.sender, pixelCount, accountIndex);
+        AccrualPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
     /*
@@ -148,7 +146,7 @@ contract CandyKillerAccount is Owned {
         } else {
             return false;
         }
-        emit WithdrawalPixelWarsCoins(msg.sender, pixelCount, accountIndex);
+        WithdrawalPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
     /*

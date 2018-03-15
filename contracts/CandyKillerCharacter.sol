@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.20;
 
 import "./Owned.sol";
 
@@ -83,7 +83,7 @@ contract CandyKillerCharacter is Owned {
         // Связываем нового персонажа с хозяином
         characterIndexToAddress[nextCharacterIndexToAssign] = msg.sender;
         // Увеличиваем индекс для следующего персонажа
-        emit CreateCharacter(msg.sender, nextCharacterIndexToAssign);
+        CreateCharacter(msg.sender, nextCharacterIndexToAssign);
         nextCharacterIndexToAssign++;
         return (newCharacter.id);
     }
