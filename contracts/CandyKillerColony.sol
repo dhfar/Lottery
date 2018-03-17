@@ -17,7 +17,7 @@ contract CandyKillerColony is Owned {
         address owner;
         uint level;
         mapping(uint => Building) buildingList;
-        uint buildingCount;
+        uint nextBuildingIndex;
         uint sugar;
         uint heavySugar;
         uint medarium;
@@ -44,6 +44,8 @@ contract CandyKillerColony is Owned {
         Здания
     */
     struct Building {
+        // идентификатор здания
+        uint index;
         // Id земли - на какой ячейке стоит здание
         uint cellIndex;
         // Локальная координата верхнего левого угла на земле
@@ -108,6 +110,7 @@ contract CandyKillerColony is Owned {
         newColony.owner = msg.sender;
         newColony.level = 1;
         newColony.name = colonyName;
+        newColony.nextBuildingIndex = 1;
         colonyList[nextColonyIndex] = newColony;
         uint8 convertHashIndex = 0;
         int[2] memory cellCoords;
@@ -239,7 +242,7 @@ contract CandyKillerColony is Owned {
         colony.index,
         colony.owner,
         colony.level,
-        colony.buildingCount,
+        colony.nextBuildingIndex,
         colony.sugar,
         colony.heavySugar,
         colony.medarium,
@@ -287,13 +290,31 @@ contract CandyKillerColony is Owned {
         }
     }
     /*
+        Списание ресурсов с ячейки
+    */
+    function collectResources(uint colonyIndex, uint cellIndex, uint collectSugar, uint collectMedarium) public onlyOwner {
+        // Аккаунта создан и активный
+        if (!ckAccount.isCreateAndActive(colonyList[colonyIndex].owner)) return;
+        // Ячейка принадлежит владельцу колонии и находится в колоние
+        if(earthCellList[cellIndex].owner != colonyList[colonyIndex].owner || !earthCellList[cellIndex].cellStatus) return;
+        if(collectSugar > 0 && earthCellList[cellIndex].sugar >= collectSugar){
+            earthCellList[cellIndex].sugar -= collectSugar;
+            colonyList[colonyIndex].sugar += collectSugar;
+        }
+        if(collectMedarium > 0 && earthCellList[cellIndex].medarium >= collectMedarium){
+            earthCellList[cellIndex].medarium -= collectMedarium;
+            colonyList[colonyIndex].medarium += collectMedarium;
+        }
+    }
+    /*
         Получение информации о здании
         Id земли - на какой ячейке стоит здание, Локальная координата верхнего левого угла на земле, Тип здания, Уровень здания, Статус уничтожения,
         Количество юнитов в здании, Максимальное количество юнитов в здании
     */
-    function getBuildingByIndex(uint colonyIndex, uint buildingIndex) public view returns (uint, uint8, uint8, uint8, bool, uint, uint, bool) {
+    function getBuildingByIndex(uint colonyIndex, uint buildingIndex) public view returns (uint, uint, uint8, uint8, uint8, bool, uint, uint, bool) {
         Building memory building = colonyList[colonyIndex].buildingList[buildingIndex];
         return (
+        building.index,
         building.cellIndex,
         building.indexOnCell,
         building.buildingType,
@@ -316,6 +337,7 @@ contract CandyKillerColony is Owned {
         if(earthCellList[earthCellIndexForBuild].owner != msg.sender) return;
 
         Building memory building;
+        building.index = colonyList[colonyIndexForBuild].nextBuildingIndex;
         building.cellIndex = earthCellIndexForBuild;
         building.indexOnCell = buildingIndexOnCellForBuild;
         building.buildingType = buildingType;
@@ -326,12 +348,12 @@ contract CandyKillerColony is Owned {
         // ToDo Заполнить ячейки занимающие зданием на землях
         // Если, что то стоит прогоняем
         if (earthCellList[earthCellIndexForBuild].buildingIdsOnCell[buildingIndexOnCellForBuild] != 0) return;
-        earthCellList[earthCellIndexForBuild].buildingIdsOnCell[buildingIndexOnCellForBuild] = colonyList[colonyIndexForBuild].buildingCount;
+        earthCellList[earthCellIndexForBuild].buildingIdsOnCell[buildingIndexOnCellForBuild] = colonyList[colonyIndexForBuild].nextBuildingIndex;
 
-        colonyList[colonyIndexForBuild].buildingList[colonyList[colonyIndexForBuild].buildingCount] = building;
-        colonyList[colonyIndexForBuild].buildingCount++;
+        colonyList[colonyIndexForBuild].buildingList[colonyList[colonyIndexForBuild].nextBuildingIndex] = building;
+        colonyList[colonyIndexForBuild].nextBuildingIndex++;
 
-        BuildBuilding(colonyList[colonyIndexForBuild].buildingCount - 1, earthCellIndexForBuild, colonyIndexForBuild, msg.sender);
+        BuildBuilding(colonyList[colonyIndexForBuild].nextBuildingIndex - 1, earthCellIndexForBuild, colonyIndexForBuild, msg.sender);
     }
     /*
         Удаление здания
@@ -350,6 +372,21 @@ contract CandyKillerColony is Owned {
 
 
         DeleteBuilding(buildingIndex, colonyIndex, msg.sender);
+    }
+    /*
+        Получение идентификатора следующго здания в колонии.
+        previousBuildingIndex - предыдущее здание колонии.
+        Если colonyIndex не принадлежит вызвавшему функцию вернет 0.
+        Если ячеек земли нет вернет 0.
+    */
+    function getNextUserBuildingIndex(uint previousBuildingIndex, uint colonyIndex) public view returns (uint) {
+        if(colonyList[colonyIndex].owner != msg.sender) return 0;
+        for (uint i = previousBuildingIndex + 1; i < colonyList[colonyIndex].nextBuildingIndex; i++) {
+            if(!colonyList[colonyIndex].buildingList[i].isDelete){
+                return i;
+            }
+        }
+        return 0;
     }
     /*
         Добавить юнитов в здание
