@@ -10,6 +10,10 @@ contract CandyKillerAccount is Owned {
     // список учетных записе
     mapping(address => Account) private accounts;
     mapping(uint => address) private indexOfAccounts;
+    // Валюта пользователей
+    mapping(address => uint) public pendingWithdrawals;
+    // адреса магазинов
+    address colonyMarketPlace;
     /*
         Описание аккаунта
     */
@@ -154,6 +158,23 @@ contract CandyKillerAccount is Owned {
     */
     function isCreateAndActive(address userAddress) public view returns (bool) {
         return (accounts[userAddress].isCreated && accounts[userAddress].isActivate);
+    }
+    /*
+        Задать адрес контракта магазина колонии
+    */
+    function setColonyMarketPlace(address colonyMarketPlaceAddress) public onlyOwner {
+        if(colonyMarketPlaceAddress == 0x0) return;
+        colonyMarketPlace = colonyMarketPlaceAddress;
+    }
+    /*
+        Записать средства на счет пользователя
+    */
+    function addPendingWithdrawals(address userAddress) public payable returns (bool){
+        if(msg.sender != colonyMarketPlace) return false;
+        if(msg.value == 0) return false;
+        if(!isCreateAndActive(userAddress)) return false;
+        pendingWithdrawals[userAddress] += msg.value;
+        return true;
     }
     /*
         Конвертация опыта персонажа в свободный опыт

@@ -203,6 +203,18 @@ contract CandyKillerColony is Owned {
         nextEarthCellIndex++;
     }
     /*
+       Ячейка существует и свободна для продажи
+    */
+    function isExistAndForSaleCell(address customer, uint cellIndex) public view returns (bool) {
+        return (earthCellList[cellIndex].owner != 0x0 && earthCellList[cellIndex].owner != customer && !earthCellList[cellIndex].isNotSale);
+    }
+    /*
+       Является владельцем ячейки
+    */
+    function isOwnerEarthCell(address possibleOwner, uint cellIndex) public view returns (bool) {
+        return (earthCellList[cellIndex].owner == possibleOwner && possibleOwner != 0x0);
+    }
+    /*
         Получение идентификатора следующей колонии пользователя.
         previousColonyIndex - предыдущая колония пользователя.
         Если previousColonyIndex не принадлежит вызвавшему функцию вернет 0.
