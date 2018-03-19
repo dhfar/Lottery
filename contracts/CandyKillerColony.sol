@@ -234,7 +234,7 @@ contract CandyKillerColony is Owned {
         // Аккаунта создан и активный
         if (!ckAccount.isCreateAndActive(msg.sender)) return;
         if(earthCellList[cellIndex].owner != msg.sender || colonyList[colonyIndex].owner != msg.sender || earthCellList[cellIndex].cellStatus) return;
-        if(x > -128 || x < 128 || y > -128 || y < 128) return;
+        if(x < -128 || x > 128 || y < -128 || y > 128) return;
         // ToDo сделать проверки на возможность поставить ячейку в указанню клетку
         int[2] memory cellCoords;
         cellCoords[0] = x;
