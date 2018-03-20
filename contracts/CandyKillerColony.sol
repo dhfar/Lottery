@@ -9,6 +9,8 @@ contract CandyKillerColony is Owned {
     */
     CandyKillerAccount ckAccount;
     CKServiceContract ckService;
+    // адреса магазинов
+    address colonyMarketPlace;
     /*
         Колония
     */
@@ -103,6 +105,13 @@ contract CandyKillerColony is Owned {
     function initCKServiceContract(address serviceContract) public onlyOwner {
         if (serviceContract == 0x0) return;
         ckService = CKServiceContract(serviceContract);
+    }
+    /*
+        Задать адрес контракта магазина колонии
+    */
+    function setColonyMarketPlace(address colonyMarketPlaceAddress) public onlyOwner {
+        if (colonyMarketPlaceAddress == 0x0) return;
+        colonyMarketPlace = colonyMarketPlaceAddress;
     }
     /*
         создание колонии
@@ -277,6 +286,16 @@ contract CandyKillerColony is Owned {
     */
     function isOwnerEarthCell(address possibleOwner, uint cellIndex) public view returns (bool) {
         return (earthCellList[cellIndex].owner == possibleOwner && possibleOwner != 0x0);
+    }
+    /*
+        Продажа ячейки
+    */
+    function transferEarthCell(address from, address to, uint cellIndex) public returns (bool) {
+        // функцию вызывает только контракт магазин
+        if (msg.sender != colonyMarketPlace) return false;
+        if (earthCellList[cellIndex].owner != from || earthCellList[cellIndex].colonyIndex != 0) return false;
+        earthCellList[cellIndex].owner = to;
+        return true;
     }
     /*
         Получение идентификатора следующей колонии пользователя.

@@ -163,16 +163,16 @@ contract CandyKillerAccount is Owned {
         Задать адрес контракта магазина колонии
     */
     function setColonyMarketPlace(address colonyMarketPlaceAddress) public onlyOwner {
-        if(colonyMarketPlaceAddress == 0x0) return;
+        if (colonyMarketPlaceAddress == 0x0) return;
         colonyMarketPlace = colonyMarketPlaceAddress;
     }
     /*
         Записать средства на счет пользователя
     */
     function addPendingWithdrawals(address userAddress) public payable returns (bool){
-        if(msg.sender != colonyMarketPlace) return false;
-        if(msg.value == 0) return false;
-        if(!isCreateAndActive(userAddress)) return false;
+        if (msg.sender != colonyMarketPlace) return false;
+        if (msg.value == 0) return false;
+        if (!isCreateAndActive(userAddress)) return false;
         pendingWithdrawals[userAddress] += msg.value;
         return true;
     }
