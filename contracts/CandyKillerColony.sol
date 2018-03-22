@@ -110,7 +110,7 @@ contract CandyKillerColony is Owned {
         Задать адрес контракта магазина колонии
     */
     function setColonyMarketPlace(address colonyMarketPlaceAddress) public onlyOwner {
-        if(colonyMarketPlaceAddress == 0x0) return;
+        if (colonyMarketPlaceAddress == 0x0) return;
         colonyMarketPlace = colonyMarketPlaceAddress;
     }
     /*
@@ -291,12 +291,24 @@ contract CandyKillerColony is Owned {
         return (earthCellList[cellIndex].owner == possibleOwner && possibleOwner != 0x0);
     }
     /*
+      Колония существует и покупатель не её владелец
+    */
+    function isExistColony(address customer, uint colonyIndex) public view returns (bool) {
+        return (colonyList[colonyIndex].owner != 0x0 && colonyList[colonyIndex].owner != customer);
+    }
+    /*
+       Является владельцем колонии
+    */
+    function isOwnerColony(address possibleOwner, uint colonyIndex) public view returns (bool) {
+        return (colonyList[colonyIndex].owner == possibleOwner && possibleOwner != 0x0);
+    }
+    /*
         Продажа ячейки
     */
     function transferEarthCell(address from, address to, uint cellIndex) public returns (bool) {
         // функцию вызывает только контракт магазин
-        if(msg.sender != colonyMarketPlace) return false;
-        if(earthCellList[cellIndex].owner != from || earthCellList[cellIndex].colonyIndex != 0) return false;
+        if (msg.sender != colonyMarketPlace) return false;
+        if (earthCellList[cellIndex].owner != from || earthCellList[cellIndex].colonyIndex != 0) return false;
         earthCellList[cellIndex].owner = to;
         return true;
     }
@@ -463,7 +475,6 @@ contract CandyKillerColony is Owned {
         colonyList[colonyIndex].buildingList[buildingIndex].isDelete = true;
         colonyList[colonyIndex].buildingList[buildingIndex].cellIndex = 0;
         removeUnitFromBuilding(colonyIndex, buildingIndex, colonyList[colonyIndex].buildingList[buildingIndex].unitCount);
-
 
         DeleteBuilding(buildingIndex, colonyIndex, msg.sender);
     }
