@@ -1,4 +1,4 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -55,7 +55,7 @@ contract CandyKillerAccount is Owned {
         newAccount.isCreated = true;
         accounts[msg.sender] = newAccount;
         indexOfAccounts[nextAccountIndex] = msg.sender;
-        CreateAccount(msg.sender, nextAccountIndex);
+        emit CreateAccount(msg.sender, nextAccountIndex);
         nextAccountIndex++;
         return nextAccountIndex - 1;
     }
@@ -128,7 +128,7 @@ contract CandyKillerAccount is Owned {
         if (msg.value <= 0) return false;
         uint coins = msg.value / pixelWarsCoinPrice;
         accounts[msg.sender].pixelWarsCoin += coins;
-        BuyPixelWarsCoins(msg.sender, coins);
+        emit BuyPixelWarsCoins(msg.sender, coins);
         return true;
     }
     /*
@@ -137,7 +137,7 @@ contract CandyKillerAccount is Owned {
     function accrualPixelWarsCoins(uint pixelCount, uint accountIndex) public onlyOwner returns (bool) {
         if (!accounts[indexOfAccounts[accountIndex]].isCreated) return false;
         accounts[indexOfAccounts[accountIndex]].pixelWarsCoin += pixelCount;
-        AccrualPixelWarsCoins(msg.sender, pixelCount, accountIndex);
+        emit AccrualPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
     /*
@@ -150,7 +150,7 @@ contract CandyKillerAccount is Owned {
         } else {
             return false;
         }
-        WithdrawalPixelWarsCoins(msg.sender, pixelCount, accountIndex);
+        emit WithdrawalPixelWarsCoins(msg.sender, pixelCount, accountIndex);
         return true;
     }
     /*

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -123,7 +123,7 @@ contract CKColonyMarketPlace is Owned {
             ckAccount.addPendingWithdrawals.value(msg.value)(msg.sender);
             // создаем новое предложение
             earthCellBids[cellIndex] = BidEarthCell(cellIndex, msg.sender, msg.value);
-            EarthCellBidEntered(cellIndex, msg.value, msg.sender);
+            emit EarthCellBidEntered(cellIndex, msg.value, msg.sender);
         }
     }
     /*
@@ -141,7 +141,7 @@ contract CKColonyMarketPlace is Owned {
         earthCellBids[cellIndex] = BidEarthCell(cellIndex, 0x0, 0);
         // переведём бабки пользователю
         ckAccount.addPendingWithdrawals.value(existBid.price)(msg.sender);
-        EarthCellBidAccepted(cellIndex, existBid.price, existBid.customer);
+        emit EarthCellBidAccepted(cellIndex, existBid.price, existBid.customer);
     }
     /*
         Снятие предложения на покупку ячейки земли
@@ -153,7 +153,7 @@ contract CKColonyMarketPlace is Owned {
         // существует предложение
         if (existBidEarthCell.customer != msg.sender) return;
         // Обнуляем предложения по ячейке
-        EarthCellBidWithdrawn(cellIndex, existBidEarthCell.price, msg.sender);
+        emit EarthCellBidWithdrawn(cellIndex, existBidEarthCell.price, msg.sender);
         // вернем деньги за предложение
         msg.sender.transfer(existBidEarthCell.price);
         earthCellBids[cellIndex] = BidEarthCell(cellIndex, 0x0, 0);
@@ -170,7 +170,7 @@ contract CKColonyMarketPlace is Owned {
         if (!ckColony.isOwnerEarthCell(msg.sender, cellIndex)) return;
         if (price == 0) return;
         earthCellOffer[cellIndex] = OfferEarthCell(cellIndex, msg.sender, price, 0x0, true);
-        EarthCellOffered(cellIndex, price, 0x0);
+        emit EarthCellOffered(cellIndex, price, 0x0);
     }
     /*
         Добавление предложения на продажу ячейки земли, конкретному пользователю
@@ -185,7 +185,7 @@ contract CKColonyMarketPlace is Owned {
         if (price == 0) return;
         if (toAddress == 0x0) return;
         earthCellOffer[cellIndex] = OfferEarthCell(cellIndex, msg.sender, price, toAddress, true);
-        EarthCellOffered(cellIndex, price, toAddress);
+        emit EarthCellOffered(cellIndex, price, toAddress);
     }
     /*
         Купить ячейку земли
@@ -206,13 +206,13 @@ contract CKColonyMarketPlace is Owned {
         earthCellOffer[cellIndex] = OfferEarthCell(cellIndex, 0x0, 0, 0x0, false);
         // переведём бабки пользователю
         ckAccount.addPendingWithdrawals.value(existOffer.price)(msg.sender);
-        EarthCellBidBuy(cellIndex, existOffer.price, msg.sender);
+        emit EarthCellBidBuy(cellIndex, existOffer.price, msg.sender);
         // проверим не предлагал свои условия покупатель
         BidEarthCell memory existBidEarthCell = earthCellBids[cellIndex];
         // существует предложение
         if (existBidEarthCell.customer == msg.sender) {
             // Обнуляем предложения по ячейке
-            EarthCellBidWithdrawn(cellIndex, existBidEarthCell.price, msg.sender);
+            emit EarthCellBidWithdrawn(cellIndex, existBidEarthCell.price, msg.sender);
             // вернем деньги за предложение
             msg.sender.transfer(existBidEarthCell.price);
             earthCellBids[cellIndex] = BidEarthCell(cellIndex, 0x0, 0);
@@ -227,7 +227,7 @@ contract CKColonyMarketPlace is Owned {
         // ячейка свободна для продажи и принадлежит
         if (!ckColony.isOwnerEarthCell(msg.sender, cellIndex)) return;
         earthCellOffer[cellIndex] = OfferEarthCell(cellIndex, msg.sender, 0, 0x0, false);
-        WithdrawOfferForEarthCell(cellIndex);
+        emit WithdrawOfferForEarthCell(cellIndex);
     }
     /*
         Получить информацию о предложение на продажу ячейки
@@ -267,7 +267,7 @@ contract CKColonyMarketPlace is Owned {
             ckAccount.addPendingWithdrawals.value(msg.value)(msg.sender);
             // создаем новое предложение
             colonyBids[colonyIndex] = BidColony(colonyIndex, msg.sender, msg.value);
-            ColonyBidEntered(colonyIndex, msg.value, msg.sender);
+            emit ColonyBidEntered(colonyIndex, msg.value, msg.sender);
         }
     }
     /*
@@ -284,7 +284,7 @@ contract CKColonyMarketPlace is Owned {
         // существует предложение
         if (existBidColony.customer != msg.sender) return;
         // Обнуляем предложения по ячейке
-        ColonyBidWithdrawn(colonyIndex, existBidColony.price, msg.sender);
+        emit ColonyBidWithdrawn(colonyIndex, existBidColony.price, msg.sender);
         // вернем деньги за предложение
         msg.sender.transfer(existBidColony.price);
         colonyBids[colonyIndex] = BidColony(colonyIndex, 0x0, 0);
@@ -299,7 +299,7 @@ contract CKColonyMarketPlace is Owned {
         if (ckColony.isOwnerColony(msg.sender, colonyIndex)) return;
         if (price == 0) return;
         colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, price, 0x0, true);
-        ColonyOffered(colonyIndex, price, 0x0);
+        emit ColonyOffered(colonyIndex, price, 0x0);
     }
     /*
         Добавление предложения на продажу колонии для конкретного покупателя
@@ -312,7 +312,7 @@ contract CKColonyMarketPlace is Owned {
         if (price == 0) return;
         if (toAddress == 0x0) return;
         colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, price, toAddress, true);
-        ColonyOffered(colonyIndex, price, 0x0);
+        emit ColonyOffered(colonyIndex, price, 0x0);
     }
 
     /*
@@ -324,7 +324,7 @@ contract CKColonyMarketPlace is Owned {
         // ячейка свободна для продажи и принадлежит
         if (!ckColony.isOwnerColony(msg.sender, colonyIndex)) return;
         colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, 0, 0x0, false);
-        WithdrawOfferForColony(colonyIndex);
+        emit WithdrawOfferForColony(colonyIndex);
     }
     /*
         Получить информацию предложения на продажу колонии

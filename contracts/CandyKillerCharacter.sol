@@ -1,4 +1,4 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -38,7 +38,7 @@ contract CandyKillerCharacter is Owned {
     // создание персонажа
     event CreateCharacter(address indexed _creator, uint _character);
 
-    function CandyKillerCharacter() public {
+    function CandyKilleAccountCharacter() public {
         owner = msg.sender;
         totalSupply = 10000;
         name = "CandyKillerCharacter";
@@ -49,14 +49,14 @@ contract CandyKillerCharacter is Owned {
         инициализация объекта CandyKillerAccount
     */
     function initCandyKillerAccount(address accountContract) public onlyOwner {
-        if(accountContract == 0x0) return;
+        if (accountContract == 0x0) return;
         ckAccount = CandyKillerAccount(accountContract);
     }
     /*
         инициализация объекта CKServiceContract
     */
     function initCKServiceContract(address serviceContract) public onlyOwner {
-        if(serviceContract == 0x0) return;
+        if (serviceContract == 0x0) return;
         ckService = CKServiceContract(serviceContract);
     }
     /*
@@ -83,7 +83,7 @@ contract CandyKillerCharacter is Owned {
         // Связываем нового персонажа с хозяином
         characterIndexToAddress[nextCharacterIndexToAssign] = msg.sender;
         // Увеличиваем индекс для следующего персонажа
-        CreateCharacter(msg.sender, nextCharacterIndexToAssign);
+        emit CreateCharacter(msg.sender, nextCharacterIndexToAssign);
         nextCharacterIndexToAssign++;
         return (newCharacter.id);
     }

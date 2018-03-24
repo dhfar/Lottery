@@ -1,4 +1,4 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -121,7 +121,7 @@ contract CandyKillerColony is Owned {
         if (!ckAccount.isCreateAndActive(msg.sender)) return;
         uint8[32] memory convertHash;
         bool error;
-        (convertHash, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 10);
+        (convertHash, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 14);
         if (error) return;
         Colony memory newColony;
         newColony.index = nextColonyIndex;
@@ -165,7 +165,7 @@ contract CandyKillerColony is Owned {
                     }
                     earthCellList[nextEarthCellIndex].earthCellParts[z] = newEarthCellPart;
                 }
-                CreateEarthCellForNewColony(newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
+                emit CreateEarthCellForNewColony(newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
                 convertHashIndex += 2;
                 nextEarthCellIndex++;
             }
@@ -193,12 +193,12 @@ contract CandyKillerColony is Owned {
                 earthCellList[nextEarthCellIndex].earthCellParts[z] = newEarthCellPart;
             }
 
-            CreateEarthCellForNewColony(newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
+            emit CreateEarthCellForNewColony(newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
             convertHashIndex += 2;
             nextEarthCellIndex++;
         }
         nextColonyIndex++;
-        CreateColony(newColony.index, newColony.owner);
+        emit CreateColony(newColony.index, newColony.owner);
     }
     /*
         Удаление колонии
@@ -218,7 +218,7 @@ contract CandyKillerColony is Owned {
                 earthCellList[i].isNotSale = true;
             }
         }
-        DeleteColony(indexColony, msg.sender);
+        emit DeleteColony(indexColony, msg.sender);
     }
     /*
         Начисление сахара
@@ -275,7 +275,7 @@ contract CandyKillerColony is Owned {
             }
             earthCellList[nextEarthCellIndex].earthCellParts[z] = newEarthCellPart;
         }
-        GenerateNewEarthCell(gameId, newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
+        emit GenerateNewEarthCell(gameId, newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
         nextEarthCellIndex++;
     }
     /*
@@ -459,7 +459,7 @@ contract CandyKillerColony is Owned {
         colonyList[colonyIndexForBuild].buildingList[colonyList[colonyIndexForBuild].nextBuildingIndex] = building;
         colonyList[colonyIndexForBuild].nextBuildingIndex++;
 
-        BuildBuilding(colonyList[colonyIndexForBuild].nextBuildingIndex - 1, earthCellIndexForBuild, colonyIndexForBuild, msg.sender);
+        emit BuildBuilding(colonyList[colonyIndexForBuild].nextBuildingIndex - 1, earthCellIndexForBuild, colonyIndexForBuild, msg.sender);
     }
     /*
         Удаление здания
@@ -476,7 +476,7 @@ contract CandyKillerColony is Owned {
         colonyList[colonyIndex].buildingList[buildingIndex].cellIndex = 0;
         removeUnitFromBuilding(colonyIndex, buildingIndex, colonyList[colonyIndex].buildingList[buildingIndex].unitCount);
 
-        DeleteBuilding(buildingIndex, colonyIndex, msg.sender);
+        emit DeleteBuilding(buildingIndex, colonyIndex, msg.sender);
     }
     /*
         Получение идентификатора следующго здания в колонии.

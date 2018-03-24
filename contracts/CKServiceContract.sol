@@ -1,4 +1,4 @@
-pragma solidity ^0.4.20;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -13,7 +13,7 @@ contract CKServiceContract is Owned {
     }
 
     function convertBlockHashToUintHexArray(bytes32 bloclHash, uint8 convertCharacterCount) public pure returns (uint8[32] convertValues, bool error) {
-        if(convertCharacterCount == 0 || convertCharacterCount > 32) return (convertValues, error);
+        if (convertCharacterCount == 0 || convertCharacterCount > 32) return (convertValues, error);
         string memory s = bytes32ToString(bloclHash);
         bytes memory b = bytes(s);
         uint8 convertValue;
