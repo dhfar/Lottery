@@ -36,7 +36,7 @@ contract CandyKillerCharacter is Owned {
         uint rentDayLenght;
     }
     // создание персонажа
-    event CreateCharacter(address indexed _creator, uint _character);
+    event CreateCharacter(address creator, uint index);
 
     function CandyKilleAccountCharacter() public {
         owner = msg.sender;

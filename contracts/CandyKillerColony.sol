@@ -81,13 +81,13 @@ contract CandyKillerColony is Owned {
     uint nextEarthCellIndex = 1;
     uint nextColonyIndex = 1;
 
-    event CreateColony(uint colonyIndex, address indexed ownerColonyAddress);
-    event CreateEarthCellForNewColony(uint earthCellIndex, uint sugar, uint medarium, address indexed ownerEarthCellAddress);
-    event DeleteColony(uint colonyIndex, address indexed ownerColonyAddress);
-    event GenerateNewEarthCell(uint gameId, uint earthCellIndex, uint sugar, uint medarium, address indexed ownerEarthCellAddress);
+    event CreateColony(uint colonyIndex, address ownerColonyAddress);
+    event CreateEarthCellForNewColony(uint earthCellIndex, uint sugar, uint medarium, address ownerEarthCellAddress);
+    event DeleteColony(uint colonyIndex, address ownerColonyAddress);
+    event GenerateNewEarthCell(uint gameId, uint earthCellIndex, uint sugar, uint medarium, address ownerEarthCellAddress);
 
-    event BuildBuilding(uint building, uint earthCellIndex, uint colonyIndex, address indexed ownerColonyAddress);
-    event DeleteBuilding(uint building, uint colonyIndex, address indexed ownerColonyAddress);
+    event BuildBuilding(uint building, uint earthCellIndex, uint colonyIndex, address ownerColonyAddress);
+    event DeleteBuilding(uint building, uint colonyIndex, address ownerColonyAddress);
 
     function CandyKillerColony() public {
         owner = msg.sender;

@@ -30,13 +30,13 @@ contract CandyKillerAccount is Owned {
         События
     */
     // создание учетной записи
-    event CreateAccount(address indexed _creator, uint _account);
+    event CreateAccount(address creator, uint account);
     // покупка игровой валюты
-    event BuyPixelWarsCoins(address indexed _buyer, uint _coins);
+    event BuyPixelWarsCoins(address buyer, uint coins);
     // начисление игровой валюты
-    event AccrualPixelWarsCoins(address indexed _executor, uint _pixelCount, uint _accountIndex);
+    event AccrualPixelWarsCoins(address executor, uint pixelCount, uint accountIndex);
     // списание игровой валюты
-    event WithdrawalPixelWarsCoins(address indexed _executor, uint _pixelCount, uint _accountIndex);
+    event WithdrawalPixelWarsCoins(address executor, uint pixelCount, uint accountIndex);
 
     function CandyKillerAccount() public {
         owner = msg.sender;

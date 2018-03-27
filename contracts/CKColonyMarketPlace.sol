@@ -77,17 +77,17 @@ contract CKColonyMarketPlace is Owned {
     /*
         События
     */
-    event EarthCellBidEntered(uint cellIndex, uint price, address indexed customerAddress);
-    event EarthCellBidWithdrawn(uint cellIndex, uint price, address indexed customerAddress);
-    event EarthCellBidAccepted(uint charactecellIndexrIndex, uint price, address indexed tenantAddress);
-    event EarthCellOffered(uint cellIndex, uint price, address indexed toAddress);
-    event EarthCellBidBuy(uint cellIndex, uint price, address indexed toAddress);
-    event WithdrawOfferForEarthCell(uint indexed cellIndex);
+    event EarthCellBidEntered(uint cellIndex, uint price, address customerAddress);
+    event EarthCellBidWithdrawn(uint cellIndex, uint price, address customerAddress);
+    event EarthCellBidAccepted(uint charactecellIndexrIndex, uint price, address tenantAddress);
+    event EarthCellOffered(uint cellIndex, uint price, address toAddress);
+    event EarthCellBidBuy(uint cellIndex, uint price, address toAddress);
+    event WithdrawOfferForEarthCell(uint cellIndex);
 
-    event ColonyBidEntered(uint colonyIndex, uint price, address indexed customerAddress);
-    event ColonyBidWithdrawn(uint colonyIndex, uint price, address indexed customerAddress);
-    event ColonyOffered(uint colonyIndex, uint price, address indexed toAddress);
-    event WithdrawOfferForColony(uint indexed colonyIndex);
+    event ColonyBidEntered(uint colonyIndex, uint price, address customerAddress);
+    event ColonyBidWithdrawn(uint colonyIndex, uint price, address customerAddress);
+    event ColonyOffered(uint colonyIndex, uint price, address toAddress);
+    event WithdrawOfferForColony(uint colonyIndex);
 
     function CKColonyMarketPlace() public {
         owner = msg.sender;
