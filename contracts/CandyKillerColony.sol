@@ -17,7 +17,6 @@ contract CandyKillerColony is Owned {
     struct Colony {
         uint index;
         address owner;
-        uint level;
         mapping(uint => Building) buildingList;
         uint nextBuildingIndex;
         uint sugar;
@@ -27,6 +26,9 @@ contract CandyKillerColony is Owned {
         uint freeUnitCount;
         string name;
         bool isDelete;
+        // массив ячеек земли в колонии
+        mapping(uint => uint) earthCellInColonyList;
+        uint nextEarthCellInColonyIndex;
     }
     /*
         Ячейка земли
@@ -126,7 +128,6 @@ contract CandyKillerColony is Owned {
         Colony memory newColony;
         newColony.index = nextColonyIndex;
         newColony.owner = msg.sender;
-        newColony.level = 1;
         newColony.name = colonyName;
         newColony.nextBuildingIndex = 1;
         colonyList[nextColonyIndex] = newColony;
@@ -168,6 +169,8 @@ contract CandyKillerColony is Owned {
                 emit CreateEarthCellForNewColony(newEarthCell.index, createSugar, createMedarium, newEarthCell.owner);
                 convertHashIndex += 2;
                 nextEarthCellIndex++;
+                colonyList[nextColonyIndex].earthCellInColonyList[colonyList[nextColonyIndex].nextEarthCellInColonyIndex] = newEarthCell.index;
+                colonyList[nextColonyIndex].nextEarthCellInColonyIndex++;
             }
         }
 
@@ -313,6 +316,19 @@ contract CandyKillerColony is Owned {
         return true;
     }
     /*
+        Продажа колонии
+    */
+    function transferColony(address from, address to, uint colonyIndex) public returns (bool) {
+        // функцию вызывает только контракт магазин
+        if (msg.sender != colonyMarketPlace) return false;
+        if (colonyList[colonyIndex].owner != from || colonyList[colonyIndex].isDelete || to == 0x0) return false;
+        colonyList[colonyIndex].owner = to;
+        for (uint i = 0; i < colonyList[colonyIndex].nextEarthCellInColonyIndex; i++) {
+            earthCellList[colonyList[colonyIndex].earthCellInColonyList[i]].owner = to;
+        }
+        return true;
+    }
+    /*
         Получение идентификатора следующей колонии пользователя.
         previousColonyIndex - предыдущая колония пользователя.
         Если previousColonyIndex не принадлежит вызвавшему функцию вернет 0.
@@ -341,17 +357,19 @@ contract CandyKillerColony is Owned {
         earthCellList[cellIndex].coords = cellCoords;
         earthCellList[cellIndex].cellStatus = true;
         earthCellList[cellIndex].colonyIndex = colonyIndex;
+
+        colonyList[colonyIndex].earthCellInColonyList[colonyList[colonyIndex].nextEarthCellInColonyIndex] = earthCellList[cellIndex].index;
+        colonyList[colonyIndex].nextEarthCellInColonyIndex++;
     }
     /*
         Получение информации о колонии
         Идентификатор, владелец, уровень, кол-во зданий, сахар, тяжелый сахар, медариум, кол-во юнитов, кол-во свободных юнитов, наименование
     */
-    function getColonyByIndex(uint colonyIndex) public view returns (uint, address, uint, uint, uint, uint, uint, uint, uint, string, bool) {
+    function getColonyByIndex(uint colonyIndex) public view returns (uint, address, uint, uint, uint, uint, uint, uint, string, bool) {
         Colony memory colony = colonyList[colonyIndex];
         return (
         colony.index,
         colony.owner,
-        colony.level,
         colony.nextBuildingIndex,
         colony.sugar,
         colony.heavySugar,

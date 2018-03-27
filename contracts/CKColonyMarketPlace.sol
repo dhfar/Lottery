@@ -81,12 +81,14 @@ contract CKColonyMarketPlace is Owned {
     event EarthCellBidWithdrawn(uint cellIndex, uint price, address customerAddress);
     event EarthCellBidAccepted(uint charactecellIndexrIndex, uint price, address tenantAddress);
     event EarthCellOffered(uint cellIndex, uint price, address toAddress);
-    event EarthCellBidBuy(uint cellIndex, uint price, address toAddress);
+    event EarthCellOfferBuy(uint cellIndex, uint price, address toAddress);
     event WithdrawOfferForEarthCell(uint cellIndex);
 
     event ColonyBidEntered(uint colonyIndex, uint price, address customerAddress);
     event ColonyBidWithdrawn(uint colonyIndex, uint price, address customerAddress);
+    event ColonyBidAccepted(uint charactecellIndexrIndex, uint price, address tenantAddress);
     event ColonyOffered(uint colonyIndex, uint price, address toAddress);
+    event ColonyOfferBuy(uint colonyIndex, uint price, address toAddress);
     event WithdrawOfferForColony(uint colonyIndex);
 
     function CKColonyMarketPlace() public {
@@ -133,7 +135,7 @@ contract CKColonyMarketPlace is Owned {
         // Аккаунта создан и активный
         if (!ckAccount.isCreateAndActive(msg.sender)) return;
         // ячейка свободна для продажи и принадлежит
-        if (ckColony.isOwnerEarthCell(msg.sender, cellIndex)) return;
+        if (!ckColony.isOwnerEarthCell(msg.sender, cellIndex)) return;
         BidEarthCell memory existBid = earthCellBids[cellIndex];
         if (existBid.price == 0) return;
         // передаем ячейку новому владельцу
@@ -206,7 +208,7 @@ contract CKColonyMarketPlace is Owned {
         earthCellOffer[cellIndex] = OfferEarthCell(cellIndex, 0x0, 0, 0x0, false);
         // переведём бабки пользователю
         ckAccount.addPendingWithdrawals.value(existOffer.price)(msg.sender);
-        emit EarthCellBidBuy(cellIndex, existOffer.price, msg.sender);
+        emit EarthCellOfferBuy(cellIndex, existOffer.price, msg.sender);
         // проверим не предлагал свои условия покупатель
         BidEarthCell memory existBidEarthCell = earthCellBids[cellIndex];
         // существует предложение
@@ -273,7 +275,21 @@ contract CKColonyMarketPlace is Owned {
     /*
         Продажа колонии
     */
-
+    function acceptBidColony(uint colonyIndex) public {
+        // Аккаунта создан и активный
+        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+        // колония принадлежит продающему
+        if (!ckColony.isOwnerColony(msg.sender, colonyIndex)) return;
+        BidColony memory existBid = colonyBids[colonyIndex];
+        if (existBid.price == 0) return;
+        // передаем колонию новому владельцу
+        if (!ckColony.transferColony(msg.sender, existBid.customer, colonyIndex)) return;
+        colonyBids[colonyIndex] = BidColony(colonyIndex, 0x0, 0);
+        // переведём бабки пользователю
+        ckAccount.addPendingWithdrawals.value(existBid.price)(msg.sender);
+        colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, 0, 0x0, false);
+        emit ColonyBidAccepted(colonyIndex, existBid.price, existBid.customer);
+    }
     /*
         Снятие предложения на покупку колонии
     */
@@ -283,7 +299,7 @@ contract CKColonyMarketPlace is Owned {
         BidColony memory existBidColony = colonyBids[colonyIndex];
         // существует предложение
         if (existBidColony.customer != msg.sender) return;
-        // Обнуляем предложения по ячейке
+        // Обнуляем предложения по колонии
         emit ColonyBidWithdrawn(colonyIndex, existBidColony.price, msg.sender);
         // вернем деньги за предложение
         msg.sender.transfer(existBidColony.price);
@@ -314,14 +330,44 @@ contract CKColonyMarketPlace is Owned {
         colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, price, toAddress, true);
         emit ColonyOffered(colonyIndex, price, 0x0);
     }
-
+    /*
+        Покупка колонии
+    */
+    function buyColony(uint colonyIndex) public payable {
+        // Аккаунта создан и активный
+        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+        // ячейка не принадлежит текущему юзеру
+        if (ckColony.isOwnerColony(msg.sender, colonyIndex)) return;
+        OfferColony memory existOffer = colonyOffers[colonyIndex];
+        if (!existOffer.isForSale) return;
+        // если прислал мало денег
+        if (msg.value < existOffer.price) return;
+        // если указан конкретный покупатель
+        if (existOffer.specialCustomer != 0x0 && existOffer.specialCustomer != msg.sender) return;
+        // передаем ячейку новому владельцу
+        if (!ckColony.transferColony(existOffer.owner, msg.sender, colonyIndex)) return;
+        colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, 0, 0x0, false);
+        // переведём бабки пользователю
+        ckAccount.addPendingWithdrawals.value(existOffer.price)(msg.sender);
+        emit ColonyOfferBuy(colonyIndex, existOffer.price, msg.sender);
+        // проверим не предлагал свои условия покупатель
+        BidColony memory existBidColony = colonyBids[colonyIndex];
+        // существует предложение
+        if (existBidColony.customer == msg.sender) {
+            // Обнуляем предложения по колонии
+            emit ColonyBidWithdrawn(colonyIndex, existBidColony.price, msg.sender);
+            // вернем деньги за предложение
+            msg.sender.transfer(existBidColony.price);
+            colonyBids[colonyIndex] = BidColony(colonyIndex, 0x0, 0);
+        }
+    }
     /*
         Снятие предложения на продажу колонии
     */
     function withdrawOfferColony(uint colonyIndex) public {
         // Аккаунта создан и активный
         if (!ckAccount.isCreateAndActive(msg.sender)) return;
-        // ячейка свободна для продажи и принадлежит
+        // колония принадлежит
         if (!ckColony.isOwnerColony(msg.sender, colonyIndex)) return;
         colonyOffers[colonyIndex] = OfferColony(colonyIndex, msg.sender, 0, 0x0, false);
         emit WithdrawOfferForColony(colonyIndex);
@@ -366,4 +412,6 @@ contract CandyKillerColony {
     function isExistColony(address customer, uint colonyIndex) public view returns (bool);
 
     function isOwnerColony(address possibleOwner, uint colonyIndex) public view returns (bool);
+
+    function transferColony(address from, address to, uint colonyIndex) public returns (bool);
 }
