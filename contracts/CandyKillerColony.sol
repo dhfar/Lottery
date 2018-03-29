@@ -2,6 +2,7 @@ pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
+
 contract CandyKillerColony is Owned {
     /*
         Контракты
@@ -227,7 +228,7 @@ contract CandyKillerColony is Owned {
         colonyList[indexColony].owner = 0x0;
 
         for (uint i = 0; i < nextEarthCellIndex; i++) {
-            if (earthCellList[i].owner == msg.sender) {
+            if (earthCellList[i].owner == msg.sender && earthCellList[i].colonyIndex == indexColony) {
                 earthCellList[i].owner = 0x0;
                 earthCellList[i].isNotSale = true;
             }
