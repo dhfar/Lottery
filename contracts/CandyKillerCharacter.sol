@@ -20,6 +20,14 @@ contract CandyKillerCharacter is Owned {
     CandyKillerAccount ckAccount;
     CKServiceContract ckService;
     /*
+        Модификаторы
+    */
+    modifier onlyActiveAccount {
+        // Учетная запись создана и активна
+        require(ckAccount.isCreateAndActive(msg.sender));
+        _;
+    }
+    /*
         Описание персонажа
     */
     struct Character {
@@ -62,9 +70,7 @@ contract CandyKillerCharacter is Owned {
     /*
         Создание персонажа
     */
-    function createCharacter(string characterName) public returns (uint) {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return 0;
+    function createCharacter(string characterName) public onlyActiveAccount returns (uint) {
         // Персонаж ещё никому не принадлежит
         if (characterIndexToAddress[nextCharacterIndexToAssign] != 0x0) return 0;
         // Инициализируем нового персонажа
@@ -91,9 +97,7 @@ contract CandyKillerCharacter is Owned {
     Удаление персонажа.
     Персонаж остается без хозяина и получет статус удален.
 */
-    function deleteCharacter(uint characterIndex) public returns (bool) {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return false;
+    function deleteCharacter(uint characterIndex) public onlyActiveAccount returns (bool) {
         // Персонаж принадлежит вызвавшему функцию
         if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
         // Устанавливаем персонажу флаг удален

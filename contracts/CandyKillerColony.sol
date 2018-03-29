@@ -2,13 +2,13 @@ pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
-
 contract CandyKillerColony is Owned {
     /*
         Контракты
     */
     CandyKillerAccount ckAccount;
     CKServiceContract ckService;
+    CKColonyMarketPlace ckColonyMarketPlace;
     // адреса магазинов
     address colonyMarketPlace;
     /*
@@ -76,6 +76,14 @@ contract CandyKillerColony is Owned {
         // медариум
         uint medarium;
     }
+    /*
+        Модификаторы
+    */
+    modifier onlyActiveAccount {
+        // Учетная запись создана и активна
+        require(ckAccount.isCreateAndActive(msg.sender));
+        _;
+    }
 
     mapping(uint => EarthCell) earthCellList;
     mapping(uint => Colony) colonyList;
@@ -109,6 +117,14 @@ contract CandyKillerColony is Owned {
         ckService = CKServiceContract(serviceContract);
     }
     /*
+        инициализация объекта CKColonyMarketPlace
+    */
+    function initCKColonyMarketPlace(address colonyMarketPlaceContract) public onlyOwner {
+        if (colonyMarketPlaceContract == 0x0) return;
+        ckColonyMarketPlace = CKColonyMarketPlace(colonyMarketPlaceContract);
+        setColonyMarketPlace(colonyMarketPlaceContract);
+    }
+    /*
         Задать адрес контракта магазина колонии
     */
     function setColonyMarketPlace(address colonyMarketPlaceAddress) public onlyOwner {
@@ -118,9 +134,7 @@ contract CandyKillerColony is Owned {
     /*
         создание колонии
     */
-    function createColony(string colonyName) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function createColony(string colonyName) public onlyActiveAccount {
         uint8[32] memory convertHash;
         bool error;
         (convertHash, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 14);
@@ -206,10 +220,7 @@ contract CandyKillerColony is Owned {
     /*
         Удаление колонии
     */
-    function deleteColony(uint indexColony) public {
-        if (indexColony < 1) return;
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function deleteColony(uint indexColony) public onlyActiveAccount {
         // Колония принадлежит вызвавшему
         if (msg.sender != colonyList[indexColony].owner) return;
         colonyList[indexColony].isDelete = true;
@@ -248,14 +259,13 @@ contract CandyKillerColony is Owned {
         Создание ячейки земли
     */
     function generateCandyEarthCell(address userAddress, uint gameId) public onlyOwner {
-        if (gameId == 0 || !ckAccount.isCreateAndActive(msg.sender)) return;
+        if (gameId == 0) return;
         // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+        if (!ckAccount.isCreateAndActive(userAddress)) return;
         uint8[32] memory convertHash;
         bool error;
         (convertHash, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 2);
         if (error) return;
-
 
         EarthCell memory newEarthCell;
         uint createSugar;
@@ -311,7 +321,7 @@ contract CandyKillerColony is Owned {
     function transferEarthCell(address from, address to, uint cellIndex) public returns (bool) {
         // функцию вызывает только контракт магазин
         if (msg.sender != colonyMarketPlace) return false;
-        if (earthCellList[cellIndex].owner != from || earthCellList[cellIndex].colonyIndex != 0) return false;
+        if (earthCellList[cellIndex].owner != from || earthCellList[cellIndex].colonyIndex != 0 || earthCellList[cellIndex].isNotSale) return false;
         earthCellList[cellIndex].owner = to;
         return true;
     }
@@ -344,10 +354,9 @@ contract CandyKillerColony is Owned {
         }
     }
 
-    function putCandyEarthCellOnColony(uint colonyIndex, uint cellIndex, int x, int y) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function putCandyEarthCellOnColony(uint colonyIndex, uint cellIndex, int x, int y) public onlyActiveAccount {
         if (earthCellList[cellIndex].owner != msg.sender || colonyList[colonyIndex].owner != msg.sender || earthCellList[cellIndex].cellStatus) return;
+        if (ckColonyMarketPlace.isExistOfferEarthCell(colonyIndex)) return;
         if (x < - 128 || x > 128 || y < - 128 || y > 128) return;
         // ToDo сделать проверки на возможность поставить ячейку в указанню клетку
         int[2] memory cellCoords;
@@ -357,6 +366,7 @@ contract CandyKillerColony is Owned {
         earthCellList[cellIndex].coords = cellCoords;
         earthCellList[cellIndex].cellStatus = true;
         earthCellList[cellIndex].colonyIndex = colonyIndex;
+        earthCellList[cellIndex].isNotSale = true;
 
         colonyList[colonyIndex].earthCellInColonyList[colonyList[colonyIndex].nextEarthCellInColonyIndex] = earthCellList[cellIndex].index;
         colonyList[colonyIndex].nextEarthCellInColonyIndex++;
@@ -452,9 +462,7 @@ contract CandyKillerColony is Owned {
     /*
         Строительство здания
     */
-    function buildBuilding(uint colonyIndexForBuild, uint earthCellIndexForBuild, uint8 buildingIndexOnCellForBuild, uint8 buildingType) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function buildBuilding(uint colonyIndexForBuild, uint earthCellIndexForBuild, uint8 buildingIndexOnCellForBuild, uint8 buildingType) public onlyActiveAccount {
         // Колония принадлежит нужному человеку
         if (colonyList[colonyIndexForBuild].owner != msg.sender) return;
         // Ячейка принадлежит нужному человеку
@@ -514,9 +522,7 @@ contract CandyKillerColony is Owned {
     /*
         Добавить юнитов в здание
     */
-    function addUnitInBuilding(uint colonyIndex, uint buildingIndex, uint addUnitCount) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function addUnitInBuilding(uint colonyIndex, uint buildingIndex, uint addUnitCount) public onlyActiveAccount {
         // Колония принадлежит нужному человеку
         if (colonyList[colonyIndex].owner != msg.sender) return;
         // Если здание не заполнено
@@ -531,9 +537,7 @@ contract CandyKillerColony is Owned {
     /*
         Вывести юнитов из здания
     */
-    function removeUnitFromBuilding(uint colonyIndex, uint buildingIndex, uint removeUnitCount) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function removeUnitFromBuilding(uint colonyIndex, uint buildingIndex, uint removeUnitCount) public onlyActiveAccount {
         // Колония принадлежит нужному человеку
         if (colonyList[colonyIndex].owner != msg.sender) return;
         // Если выводим больше, чем есть
@@ -544,9 +548,7 @@ contract CandyKillerColony is Owned {
     /*
         Создание свободного юнита
     */
-    function createNewUnitInColony(uint colonyIndex) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender)) return;
+    function createNewUnitInColony(uint colonyIndex) public onlyActiveAccount {
         // Колония принадлежит нужному человеку
         if (colonyList[colonyIndex].owner != msg.sender) return;
 
@@ -568,4 +570,8 @@ contract CandyKillerAccount {
 
 contract CKServiceContract {
     function convertBlockHashToUintHexArray(bytes32 bloclHash, uint8 convertCharacterCount) public pure returns (uint8[32] convertValues, bool error);
+}
+
+contract CKColonyMarketPlace {
+    function isExistOfferEarthCell(uint cellIndex) public view returns (bool);
 }
