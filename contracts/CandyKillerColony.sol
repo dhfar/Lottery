@@ -144,6 +144,8 @@ contract CandyKillerColony is Owned {
         newColony.index = nextColonyIndex;
         newColony.owner = msg.sender;
         newColony.name = colonyName;
+        // на развитие новой колонии 1000 сахара
+        newColony.sugar = 1000;
         newColony.nextBuildingIndex = 1;
         colonyList[nextColonyIndex] = newColony;
         // содание ячеек земли
