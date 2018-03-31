@@ -63,6 +63,7 @@ contract CandyKillerAccount is Owned {
          Активация/деактивация аккаунта
     */
     function deactivateAccount() public returns (bool) {
+        if (!accounts[msg.sender].isCreated) return false;
         accounts[msg.sender].isActivate = !accounts[msg.sender].isActivate;
         return true;
     }

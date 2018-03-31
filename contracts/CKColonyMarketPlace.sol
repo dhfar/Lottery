@@ -359,6 +359,12 @@ contract CKColonyMarketPlace is Owned {
         emit WithdrawOfferForColony(colonyIndex);
     }
     /*
+        Колония выставлена на продажу
+    */
+    function isExistOfferColony(uint colonyIndex) public view returns (bool) {
+        return colonyOffers[colonyIndex].isForSale;
+    }
+    /*
         Получить информацию предложения на продажу колонии
     */
     function getOfferColony(uint colonyIndex) public view returns (uint, address, uint, address, bool) {

@@ -146,6 +146,8 @@ contract CandyKillerColony is Owned {
         newColony.name = colonyName;
         // на развитие новой колонии 1000 сахара
         newColony.sugar = 1000;
+        newColony.unitCount = 4;
+        newColony.freeUnitCount = 4;
         newColony.nextBuildingIndex = 1;
         colonyList[nextColonyIndex] = newColony;
         // содание ячеек земли
@@ -226,6 +228,7 @@ contract CandyKillerColony is Owned {
     function deleteColony(uint indexColony) public onlyActiveAccount {
         // Колония принадлежит вызвавшему
         if (msg.sender != colonyList[indexColony].owner) return;
+        if (ckColonyMarketPlace.isExistOfferColony(indexColony)) return;
         colonyList[indexColony].isDelete = true;
         colonyList[indexColony].owner = 0x0;
 
@@ -298,7 +301,7 @@ contract CandyKillerColony is Owned {
        Ячейка существует и свободна для продажи
     */
     function isExistAndForSaleCell(address customer, uint cellIndex) public view returns (bool) {
-        return (earthCellList[cellIndex].owner != 0x0 && earthCellList[cellIndex].owner != customer && !earthCellList[cellIndex].isNotSale);
+        return (earthCellList[cellIndex].owner != 0x0 && earthCellList[cellIndex].owner != customer && earthCellList[cellIndex].isNotSale);
     }
     /*
        Является владельцем ячейки
@@ -395,7 +398,6 @@ contract CandyKillerColony is Owned {
     }
     /*
         Получение информации о ячейке земли
-        Id земли - на какой ячейке стоит здание, Локальная координата верхнего левого угла на земле, Тип здания, Уровень здания, Статус уничтожения
     */
     function getEarthCellByIndex(uint candyEarthCellIndex) public view returns (uint, uint, int[2], address, bool, bool) {
         EarthCell memory earthCell = earthCellList[candyEarthCellIndex];
@@ -555,6 +557,13 @@ contract CandyKillerColony is Owned {
         // Колония принадлежит нужному человеку
         if (colonyList[colonyIndex].owner != msg.sender) return;
 
+        // базовая цена 2 единиц тяжелого сахара и 20 единиц сахара
+        uint heavySugarPrice = 2 ** colonyList[colonyIndex].unitCount;
+        uint sugarPrice = 20 ** colonyList[colonyIndex].unitCount;
+        if (colonyList[colonyIndex].heavySugar < heavySugarPrice && colonyList[colonyIndex].sugar < sugarPrice) return;
+        colonyList[colonyIndex].heavySugar -= heavySugarPrice;
+        colonyList[colonyIndex].sugar -= sugarPrice;
+
         colonyList[colonyIndex].unitCount++;
         colonyList[colonyIndex].freeUnitCount++;
     }
@@ -577,4 +586,6 @@ contract CKServiceContract {
 
 contract CKColonyMarketPlace {
     function isExistOfferEarthCell(uint cellIndex) public view returns (bool);
+
+    function isExistOfferColony(uint colonyIndex) public view returns (bool);
 }
