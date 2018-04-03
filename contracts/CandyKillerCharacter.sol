@@ -45,6 +45,10 @@ contract CandyKillerCharacter is Owned {
     }
     // создание персонажа
     event CreateCharacter(address creator, uint index);
+    // начисление опыта персонажу
+    event IncreaseExperienceCoin(address executor, uint characterIndex, uint experienceCoin);
+    // начисление свободного опыта
+    event IncreaseFreeExperienceCoin(address executor, uint characterIndex, uint _freeExperienceCoin);
 
     function CandyKilleAccountCharacter() public {
         owner = msg.sender;
@@ -139,10 +143,41 @@ contract CandyKillerCharacter is Owned {
             }
         }
     }
+    /*
+        Получение статистики персонажа
+        Игры, победы
+    */
+    function getCharacterStatisticsByIndex(uint characterIndex) public view returns (uint, uint) {
+        return (
+        characters[characterIndex].winCount,
+        characters[characterIndex].gameCount
+        );
+    }
+    /*
+        Получение монент для прокачки скилов
+    */
+    function increaseExperienceCoin(uint characterIndex, uint experienceCoin) public onlyOwner returns (bool) {
+        // У персонажа есть хозяин
+        if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        if (characterIndex == 0 || experienceCoin == 0) return false;
+        // Увеличиваем колиство монет прокачки персонажа
+        if (characters[characterIndex].tenant != 0x0) {
+            if (!ckAccount.accrueFreeExperienceCoin(msg.sender, experienceCoin / 2)) return false;
+            emit IncreaseFreeExperienceCoin(msg.sender, characterIndex, experienceCoin / 2);
+        } else {
+            characters[characterIndex].experienceCoin += experienceCoin;
+            emit IncreaseExperienceCoin(msg.sender, characterIndex, experienceCoin);
+        }
+        return true;
+    }
 }
 
 contract CandyKillerAccount {
     function isCreateAndActive(address userAddress) public view returns (bool);
+
+    function accrueFreeExperienceCoin(address accountOwner, uint accrueCoins) public returns (bool);
+
+    function writeOffFreeExperienceCoin(address accountOwner, uint writeOffCoins) public returns (bool);
 }
 
 contract CKServiceContract {

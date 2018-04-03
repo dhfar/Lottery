@@ -14,6 +14,7 @@ contract CandyKillerAccount is Owned {
     mapping(address => uint) public pendingWithdrawals;
     // адреса магазинов
     address colonyMarketPlace;
+    address candyKillerCharacter;
     /*
         Описание аккаунта
     */
@@ -168,6 +169,13 @@ contract CandyKillerAccount is Owned {
         colonyMarketPlace = colonyMarketPlaceAddress;
     }
     /*
+        Задать адрес контракта отряда
+    */
+    function setCandyKillerCharacter(address candyKillerCharacterAddress) public onlyOwner {
+        if (candyKillerCharacterAddress == 0x0) return;
+        candyKillerCharacter = candyKillerCharacterAddress;
+    }
+    /*
         Записать средства на счет пользователя
     */
     function addPendingWithdrawals(address userAddress) public payable returns (bool){
@@ -193,6 +201,23 @@ contract CandyKillerAccount is Owned {
     // return true;
     // }
 
-    // ToDo списание свободного опыта
-    // ToDo начисление свободного опыта
+    /*
+        Начисление свободного опыта
+    */
+    function accrueFreeExperienceCoin(address accountOwner, uint accrueCoins) public returns (bool) {
+        if(msg.sender != candyKillerCharacter) return false;
+        if(!isCreateAndActive(accountOwner)) return false;
+        accounts[accountOwner].freeExperienceCoin += accrueCoins;
+        return true;
+    }
+    /*
+        Списание свободного опыта
+    */
+    function writeOffFreeExperienceCoin(address accountOwner, uint writeOffCoins) public returns (bool) {
+        if(msg.sender != candyKillerCharacter) return false;
+        if(!isCreateAndActive(accountOwner)) return false;
+        if(writeOffCoins > accounts[accountOwner].freeExperienceCoin) return false;
+        accounts[accountOwner].freeExperienceCoin -= writeOffCoins;
+        return true;
+    }
 }

@@ -379,7 +379,7 @@ contract CandyKillerColony is Owned {
     }
     /*
         Получение информации о колонии
-        Идентификатор, владелец, уровень, кол-во зданий, сахар, тяжелый сахар, медариум, кол-во юнитов, кол-во свободных юнитов, наименование
+        Идентификатор, владелец, кол-во зданий, сахар, тяжелый сахар, медариум, кол-во юнитов, кол-во свободных юнитов, наименование
     */
     function getColonyByIndex(uint colonyIndex) public view returns (uint, address, uint, uint, uint, uint, uint, uint, string, bool) {
         Colony memory colony = colonyList[colonyIndex];
