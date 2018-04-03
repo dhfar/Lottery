@@ -497,9 +497,9 @@ contract CandyKillerColony is Owned {
     */
     function deleteBuilding(uint colonyIndex, uint buildingIndex) public {
         // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender) || msg.sender != owner) return;
+        if (!ckAccount.isCreateAndActive(msg.sender) && msg.sender != owner) return;
         // Колония принадлежит нужному человеку
-        if (colonyList[colonyIndex].owner != msg.sender || msg.sender != owner) return;
+        if (colonyList[colonyIndex].owner != msg.sender && msg.sender != owner) return;
         // здания не существует или удалено
         if (colonyList[colonyIndex].buildingList[buildingIndex].cellIndex == 0) return;
         earthCellList[colonyList[colonyIndex].buildingList[buildingIndex].cellIndex].earthCellParts[colonyList[colonyIndex].buildingList[buildingIndex].indexOnCell].indexBuilding = 0;
