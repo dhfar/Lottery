@@ -379,7 +379,7 @@ contract CandyKillerColony is Owned {
     }
     /*
         Получение информации о колонии
-        Идентификатор, владелец, кол-во зданий, сахар, тяжелый сахар, медариум, кол-во юнитов, кол-во свободных юнитов, наименование
+        Идентификатор, владелец, уровень, кол-во зданий, сахар, тяжелый сахар, медариум, кол-во юнитов, кол-во свободных юнитов, наименование
     */
     function getColonyByIndex(uint colonyIndex) public view returns (uint, address, uint, uint, uint, uint, uint, uint, string, bool) {
         Colony memory colony = colonyList[colonyIndex];
@@ -495,11 +495,9 @@ contract CandyKillerColony is Owned {
     /*
         Удаление здания
     */
-    function deleteBuilding(uint colonyIndex, uint buildingIndex) public {
-        // Аккаунта создан и активный
-        if (!ckAccount.isCreateAndActive(msg.sender) && msg.sender != owner) return;
+    function deleteBuilding(uint colonyIndex, uint buildingIndex) public onlyActiveAccount {
         // Колония принадлежит нужному человеку
-        if (colonyList[colonyIndex].owner != msg.sender && msg.sender != owner) return;
+        if (colonyList[colonyIndex].owner != msg.sender) return;
         // здания не существует или удалено
         if (colonyList[colonyIndex].buildingList[buildingIndex].cellIndex == 0) return;
         earthCellList[colonyList[colonyIndex].buildingList[buildingIndex].cellIndex].earthCellParts[colonyList[colonyIndex].buildingList[buildingIndex].indexOnCell].indexBuilding = 0;

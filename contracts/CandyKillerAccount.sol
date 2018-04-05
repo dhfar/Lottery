@@ -186,22 +186,6 @@ contract CandyKillerAccount is Owned {
         return true;
     }
     /*
-        Конвертация опыта персонажа в свободный опыт
-        ToDo будет после реализации контракта отряда
-    */
-    // function convertExperienceToFreeExperience(uint characterIndex, uint countCoinForCovert) public returns (bool) {
-    // // Аккаунта создан и активный
-    // if (!accounts[msg.sender].isCreated || !accounts[msg.sender].isActivate) return false;
-    // // Персонаж принадлежит вызвавшему функцию
-    // if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
-    // // у персонажа есть необходимое кол-во монет опыта
-    // if (characters[characterIndex].experienceCoin < countCoinForCovert) return false;
-    // characters[characterIndex].experienceCoin -= countCoinForCovert;
-    // accounts[msg.sender].freeExperienceCoin += (countCoinForCovert / 2);
-    // return true;
-    // }
-
-    /*
         Начисление свободного опыта
     */
     function accrueFreeExperienceCoin(address accountOwner, uint accrueCoins) public returns (bool) {
@@ -219,5 +203,11 @@ contract CandyKillerAccount is Owned {
         if(writeOffCoins > accounts[accountOwner].freeExperienceCoin) return false;
         accounts[accountOwner].freeExperienceCoin -= writeOffCoins;
         return true;
+    }
+    /*
+        Получить кол-во свободного опыта на учетной записе
+    */
+    function getFreeExperienceCoinCount(address accountOwner) public view returns (uint) {
+        return accounts[accountOwner].freeExperienceCoin;
     }
 }

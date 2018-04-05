@@ -49,6 +49,8 @@ contract CandyKillerCharacter is Owned {
     event IncreaseExperienceCoin(address executor, uint characterIndex, uint experienceCoin);
     // начисление свободного опыта
     event IncreaseFreeExperienceCoin(address executor, uint characterIndex, uint _freeExperienceCoin);
+    // прокачка скила
+    event IncreaseSkillLevel(address executor, uint characterIndex, uint skillIndex, uint experienceCoins, uint freeExperienceCoins);
 
     function CandyKilleAccountCharacter() public {
         owner = msg.sender;
@@ -162,12 +164,53 @@ contract CandyKillerCharacter is Owned {
         if (characterIndex == 0 || experienceCoin == 0) return false;
         // Увеличиваем колиство монет прокачки персонажа
         if (characters[characterIndex].tenant != 0x0) {
-            if (!ckAccount.accrueFreeExperienceCoin(msg.sender, experienceCoin / 2)) return false;
+            if (!ckAccount.accrueFreeExperienceCoin(characterIndexToAddress[characterIndex], experienceCoin / 2)) return false;
             emit IncreaseFreeExperienceCoin(msg.sender, characterIndex, experienceCoin / 2);
         } else {
             characters[characterIndex].experienceCoin += experienceCoin;
             emit IncreaseExperienceCoin(msg.sender, characterIndex, experienceCoin);
         }
+        return true;
+    }
+    /*
+        Конвертация опыта персонажа в свободный опыт
+    */
+    function convertExperienceToFreeExperience(uint characterIndex, uint countCoinForCovert) public onlyActiveAccount returns (bool) {
+        // У персонажа есть хозяин
+        if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // у персонажа есть необходимое кол-во монет опыта
+        if (characters[characterIndex].experienceCoin < countCoinForCovert) return false;
+        characters[characterIndex].experienceCoin -= countCoinForCovert;
+        if (!ckAccount.accrueFreeExperienceCoin(msg.sender, countCoinForCovert / 2)) return false;
+        return true;
+    }
+    /*
+        Увеличение уровня прокачки скила (на 1)
+    */
+    function increaseSkillLevel(uint characterIndex, uint skillIndex, uint freeExperienceCoins) public onlyActiveAccount returns (bool) {
+        // Персонаж принадлежит вызвавшему функцию
+        if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // Валидный скил индекс
+        if (skillIndex < 0 || skillIndex > 32) return false;
+        // Можно ли ещё качать эту способность
+        if (characters[characterIndex].skils[skillIndex] >= characters[characterIndex].skilsMask[skillIndex]) return false;
+        // у персонажа есть необходимое кол-во монет опыта
+        if (ckAccount.getFreeExperienceCoinCount(msg.sender) < freeExperienceCoins) return false;
+        // Монеты для поднятия уровня скила
+        uint experienceForNextLevel = 2 * (2 ** uint(characters[characterIndex].skils[skillIndex]));
+        // Есть ли нужное кол-во монет
+        uint hasExperienceCoins = characters[characterIndex].experienceCoin + freeExperienceCoins;
+        if (hasExperienceCoins == 0 && hasExperienceCoins < experienceForNextLevel) return false;
+        // Если монет для прокачки у персонажа хватает, тратим только их.
+        if (characters[characterIndex].experienceCoin >= experienceForNextLevel) {
+            characters[characterIndex].experienceCoin -= experienceForNextLevel;
+        } else {
+            characters[characterIndex].experienceCoin = 0;
+            uint usedFreeExperience = freeExperienceCoins - (hasExperienceCoins - experienceForNextLevel);
+            if(!ckAccount.writeOffFreeExperienceCoin(msg.sender, usedFreeExperience)) return false;
+        }
+        characters[characterIndex].skils[skillIndex]++;
+        emit IncreaseSkillLevel(msg.sender, characterIndex, skillIndex, experienceForNextLevel, freeExperienceCoins);
         return true;
     }
 }
@@ -178,6 +221,8 @@ contract CandyKillerAccount {
     function accrueFreeExperienceCoin(address accountOwner, uint accrueCoins) public returns (bool);
 
     function writeOffFreeExperienceCoin(address accountOwner, uint writeOffCoins) public returns (bool);
+
+    function getFreeExperienceCoinCount(address accountOwner) public view returns (uint);
 }
 
 contract CKServiceContract {
