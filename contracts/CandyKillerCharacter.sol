@@ -14,6 +14,8 @@ contract CandyKillerCharacter is Owned {
     /* персонажи */
     mapping(uint => address) public characterIndexToAddress;
     mapping(uint => Character) public characters;
+    // адреса магазинов
+    address characterMarketPlace;
     /*
         Контракты
     */
@@ -211,6 +213,35 @@ contract CandyKillerCharacter is Owned {
         }
         characters[characterIndex].skils[skillIndex]++;
         emit IncreaseSkillLevel(msg.sender, characterIndex, skillIndex, experienceForNextLevel, freeExperienceCoins);
+        return true;
+    }
+    /*
+        Отряд принадлежит указанному пользователю
+    */
+    function isCharacterOwner(uint characterIndex, address owner) public view returns (bool) {
+        return (characterIndexToAddress[characterIndex] == owner && owner != 0x0);
+    }
+    /*
+        Отряд доступен для аренды
+    */
+    function isCharacterAvailableForRent(uint characterIndex) public view returns (bool) {
+        return (characters[characterIndex].tenant == 0x0 && characters[characterIndex].id > 0);
+    }
+    /*
+        Задать аренду отряда
+    */
+    function setCharacterRent(uint characterIndex, address characterOwner, address tenant, uint rentDayCount) public returns (bool) {
+        // только магазтн
+        if(msg.sender != characterMarketPlace) return false;
+        // characterOwner владелец отряда
+        if(!isCharacterOwner(characterIndex, characterOwner)) return false;
+        // данные валидны
+        if (tenant == 0x0 || rentDayCount == 0) return false;
+        // отряд не в аренде
+        if(characters[characterIndex].tenant != 0x0) return false;
+        characters[characterIndex].tenant = tenant;
+        characters[characterIndex].rentStart = now;
+        characters[characterIndex].rentDayLenght = rentDayCount;
         return true;
     }
 }

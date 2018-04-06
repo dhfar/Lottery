@@ -128,7 +128,7 @@ contract CKColonyMarketPlace is Owned {
         // сумму предыдущего предложения запишем на счет пользователя
         if (msg.value > existBidEarthCell.price) {
             // вернем деньги
-            ckAccount.addPendingWithdrawals.value(msg.value)(msg.sender);
+            ckAccount.addPendingWithdrawals.value(existBidEarthCell.price)(existBidEarthCell.customer);
             // создаем новое предложение
             earthCellBids[cellIndex] = BidEarthCell(cellIndex, msg.sender, msg.value);
             emit EarthCellBidEntered(cellIndex, msg.value, msg.sender);
@@ -264,7 +264,7 @@ contract CKColonyMarketPlace is Owned {
         // сумму предыдущего предложения запишем на счет пользователя
         if (msg.value > existBidColony.price) {
             // вернем деньги
-            ckAccount.addPendingWithdrawals.value(msg.value)(msg.sender);
+            ckAccount.addPendingWithdrawals.value(existBidColony.price)(existBidColony.customer);
             // создаем новое предложение
             colonyBids[colonyIndex] = BidColony(colonyIndex, msg.sender, msg.value);
             emit ColonyBidEntered(colonyIndex, msg.value, msg.sender);
