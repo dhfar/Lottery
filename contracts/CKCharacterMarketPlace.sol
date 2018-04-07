@@ -134,6 +134,85 @@ contract CKCharacterMarketPlace is Owned {
         // вернем деньги за предложение
         msg.sender.transfer(amount);
     }
+    /*
+        Добавление арендного предложения отдать в аренду (от владельца)
+    */
+    function offerPunkForSale(uint characterIndex, uint offreDayCount, uint offerCostForDay) public onlyActiveAccount {
+        // пользователь владелец отряда
+        if(!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        if (offreDayCount == 0 || offerCostForDay == 0) return;
+        characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, offerCostForDay, offreDayCount, 0x0, true);
+        emit CharacterOffered(characterIndex, offerCostForDay, offreDayCount, 0x0);
+    }
+    /*
+        Добавление арендного предложения отдать в аренду  (от владельца) конкретному пользователю
+    */
+    function offerPunkForSaleToAddress(uint characterIndex, uint offreDayCount, uint offerCostForDay, address toAddress) public onlyActiveAccount {
+        // пользователь владелец отряда
+        if(!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        if (offreDayCount == 0 || offerCostForDay == 0) return;
+        if (toAddress == 0x0) return;
+        characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, offerCostForDay, offreDayCount, toAddress, true);
+        emit CharacterOffered(characterIndex, offerCostForDay, offreDayCount, toAddress);
+    }
+    /*
+        Снятие арендного предложения владельцем
+    */
+    function withdrawOfferForCharacter(uint characterIndex) public onlyActiveAccount {
+        // пользователь владелец отряда
+        if(!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, 0, 0, 0x0, false);
+        emit WithdrawOfferForCharacter(characterIndex);
+    }
+    /*
+        Взять персонажа в аренду
+    */
+    function rentCharacter(uint characterIndex) public payable onlyActiveAccount {
+        if(ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        RentOffer memory offer = characterOfferedForRent[characterIndex];
+        if (!offer.isForRent) return;
+        if (offer.specialTenant != 0x0 && offer.specialTenant != msg.sender) return;
+        if (msg.value < offer.costForDay * offer.rentDays) return;
+        if(!ckCharacter.isCharacterOwner(characterIndex, offer.characterOwner)) return;
+        // отряд не в аренде
+        if(!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
+        address seller = offer.characterOwner;
+
+        if (!ckCharacter.setCharacterRent(characterIndex,  seller, msg.sender,  offer.rentDays)) return;
+        withdrawOfferForCharacter(characterIndex);
+        if (!ckAccount.addPendingWithdrawals.value(msg.value)(seller)) return;
+        emit CharacterRent(characterIndex, offer.costForDay, offer.rentDays, seller, msg.sender);
+        // Если арендатор делал предложение, удалим его и перечислим средства на счёт
+        RentBid memory bid = characterRentBids[characterIndex];
+        if (bid.tenant == msg.sender) {
+            if (!ckAccount.addPendingWithdrawals.value(bid.costForDay * bid.rentDays)(msg.sender)) return;
+            characterRentBids[characterIndex] = RentBid(characterIndex, 0x0, 0, 0);
+        }
+    }
+    /*
+        Получить предложение от владельца персонажа
+    */
+    function getRentOffer(uint characterIndex) public view returns (uint, address, uint, uint, address, bool){
+        return (
+        characterOfferedForRent[characterIndex].id,
+        characterOfferedForRent[characterIndex].characterOwner,
+        characterOfferedForRent[characterIndex].costForDay,
+        characterOfferedForRent[characterIndex].rentDays,
+        characterOfferedForRent[characterIndex].specialTenant,
+        characterOfferedForRent[characterIndex].isForRent
+        );
+    }
+    /*
+        Получить предложение от пользователя на аренду
+    */
+    function getRentBid(uint characterIndex) public view returns (uint, address, uint, uint){
+        return (
+        characterRentBids[characterIndex].id,
+        characterRentBids[characterIndex].tenant,
+        characterRentBids[characterIndex].costForDay,
+        characterRentBids[characterIndex].rentDays
+        );
+    }
 }
 
 contract CandyKillerAccount {
