@@ -209,7 +209,7 @@ contract CandyKillerCharacter is Owned {
         } else {
             characters[characterIndex].experienceCoin = 0;
             uint usedFreeExperience = freeExperienceCoins - (hasExperienceCoins - experienceForNextLevel);
-            if(!ckAccount.writeOffFreeExperienceCoin(msg.sender, usedFreeExperience)) return false;
+            if (!ckAccount.writeOffFreeExperienceCoin(msg.sender, usedFreeExperience)) return false;
         }
         characters[characterIndex].skils[skillIndex]++;
         emit IncreaseSkillLevel(msg.sender, characterIndex, skillIndex, experienceForNextLevel, freeExperienceCoins);
@@ -232,16 +232,29 @@ contract CandyKillerCharacter is Owned {
     */
     function setCharacterRent(uint characterIndex, address characterOwner, address tenant, uint rentDayCount) public returns (bool) {
         // только магазтн
-        if(msg.sender != characterMarketPlace) return false;
+        if (msg.sender != characterMarketPlace) return false;
         // characterOwner владелец отряда
-        if(!isCharacterOwner(characterIndex, characterOwner)) return false;
+        if (!isCharacterOwner(characterIndex, characterOwner)) return false;
         // данные валидны
         if (tenant == 0x0 || rentDayCount == 0) return false;
         // отряд не в аренде
-        if(characters[characterIndex].tenant != 0x0) return false;
+        if (characters[characterIndex].tenant != 0x0) return false;
         characters[characterIndex].tenant = tenant;
         characters[characterIndex].rentStart = now;
         characters[characterIndex].rentDayLenght = rentDayCount;
+        return true;
+    }
+    /*
+        Завершение аренды
+    */
+    function overCharacterRent(uint characterIndex) public returns (bool) {
+        if (characters[characterIndex].tenant == 0x0 && characters[characterIndex].rentStart == 0 && characters[characterIndex].rentDayLenght == 0) return true;
+        if (now >= characters[characterIndex].rentStart + (characters[characterIndex].rentDayLenght * 1 days)) {
+            characters[characterIndex].tenant = 0x0;
+            characters[characterIndex].rentStart = 0;
+            characters[characterIndex].rentDayLenght = 0;
+            return false;
+        }
         return true;
     }
 }

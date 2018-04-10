@@ -16,9 +16,9 @@ contract CKCharacterMarketPlace is Owned {
     */
     struct RentOffer {
         // персонаж
-        uint id;
+        uint index;
         // владелец персонажа
-        address characterOwner;
+        address owner;
         // цена за день аренды
         uint costForDay;
         // длина аренды(дней)
@@ -33,13 +33,42 @@ contract CKCharacterMarketPlace is Owned {
     */
     struct RentBid {
         // персонаж
-        uint id;
+        uint index;
         // арендатор
         address tenant;
         // цена за день аренды
         uint costForDay;
         // длина аренды(дней)
         uint rentDays;
+    }
+    /*
+        Продажа
+    */
+    /*
+        Предложение продажи отряда
+    */
+    struct OfferCharacter {
+        // отряд
+        uint index;
+        // владелец отряда
+        address owner;
+        // цена
+        uint price;
+        // аренда конкретному пользователю
+        address specialCustomer;
+        // доступен для продажи
+        bool isForSale;
+    }
+    /*
+        Предложение покупки отряда
+    */
+    struct BidCharacter {
+        // отряд
+        uint index;
+        // покупатель
+        address customer;
+        // цена
+        uint price;
     }
     /*
         Модификаторы
@@ -53,15 +82,23 @@ contract CKCharacterMarketPlace is Owned {
     mapping(uint => RentOffer) public characterOfferedForRent;
     // Массив ставок на аренду
     mapping(uint => RentBid) public characterRentBids;
+    // Массив предложений продажи отрядов
+    mapping(uint => OfferCharacter) public characterOffers;
+    // Массив предложений покупки отдрядов
+    mapping(uint => BidCharacter) public characterBids;
     /*
         События
     */
-    event CharacterBidEntered(uint characterIndex, uint costDay, uint rentDays, address rentAddress);
-    event CharacterBidAccepted(uint characterIndex, uint costDay, uint rentDays, address tenantAddress);
-    event CharacterBidWithdrawn(uint characterIndex, uint value, address tenantAddress);
-    event CharacterOffered(uint characterIndex, uint costDay, uint rentDays, address toAddress);
-    event WithdrawOfferForCharacter(uint characterIndex);
-    event CharacterRent(uint characterIndex, uint costDay, uint rentDays, address fromAddress, address toAddress);
+    event RentCharacterBidEntered(uint characterIndex, uint costDay, uint rentDays, address rentAddress);
+    event RentCharacterBidAccepted(uint characterIndex, uint costDay, uint rentDays, address tenantAddress);
+    event RentCharacterBidWithdrawn(uint characterIndex, uint value, address tenantAddress);
+    event RentCharacterOffered(uint characterIndex, uint costDay, uint rentDays, address toAddress);
+    event RentWithdrawOfferForCharacter(uint characterIndex);
+    event RentCharacter(uint characterIndex, uint costDay, uint rentDays, address fromAddress, address toAddress);
+
+    event BidCharacterEntered(uint characterIndex, uint price, address customer);
+    event BidCharacterAccepted(uint characterIndex, uint price, address customer);
+    event BidCharacterWithdrawn(uint characterIndex, uint price, address customer);
     /*
          Создание контракта
      */
@@ -100,7 +137,7 @@ contract CKCharacterMarketPlace is Owned {
         }
         // создаем новое предложение
         characterRentBids[characterIndex] = RentBid(characterIndex, msg.sender, newRentBidCost / rentDayCount, rentDayCount);
-        emit CharacterBidEntered(characterIndex, newRentBidCost, rentDayCount, msg.sender);
+        emit RentCharacterBidEntered(characterIndex, newRentBidCost, rentDayCount, msg.sender);
     }
     /*
         Согласится на предложение аренлы отряда
@@ -118,7 +155,7 @@ contract CKCharacterMarketPlace is Owned {
         if (!ckCharacter.setCharacterRent(characterIndex,  msg.sender, existRentBid.tenant,  existRentBid.rentDays)) return;
         characterRentBids[characterIndex] = RentBid(characterIndex, 0x0, 0, 0);
         ckAccount.addPendingWithdrawals.value(existRentBid.costForDay * existRentBid.rentDays)(seller);
-        emit CharacterBidAccepted(characterIndex, existRentBid.costForDay * existRentBid.rentDays, existRentBid.rentDays, existRentBid.tenant);
+        emit RentCharacterBidAccepted(characterIndex, existRentBid.costForDay * existRentBid.rentDays, existRentBid.rentDays, existRentBid.tenant);
     }
     /*
         Снятие арендного предложения пользователем
@@ -129,7 +166,7 @@ contract CKCharacterMarketPlace is Owned {
         RentBid memory existRentBid = characterRentBids[characterIndex];
         if (existRentBid.tenant != msg.sender) return;
         uint amount = existRentBid.costForDay * existRentBid.rentDays;
-        emit CharacterBidWithdrawn(characterIndex, amount, msg.sender);
+        emit RentCharacterBidWithdrawn(characterIndex, amount, msg.sender);
         characterRentBids[characterIndex] = RentBid(characterIndex, 0x0, 0, 0);
         // вернем деньги за предложение
         msg.sender.transfer(amount);
@@ -142,7 +179,7 @@ contract CKCharacterMarketPlace is Owned {
         if(!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
         if (offreDayCount == 0 || offerCostForDay == 0) return;
         characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, offerCostForDay, offreDayCount, 0x0, true);
-        emit CharacterOffered(characterIndex, offerCostForDay, offreDayCount, 0x0);
+        emit RentCharacterOffered(characterIndex, offerCostForDay, offreDayCount, 0x0);
     }
     /*
         Добавление арендного предложения отдать в аренду  (от владельца) конкретному пользователю
@@ -153,7 +190,7 @@ contract CKCharacterMarketPlace is Owned {
         if (offreDayCount == 0 || offerCostForDay == 0) return;
         if (toAddress == 0x0) return;
         characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, offerCostForDay, offreDayCount, toAddress, true);
-        emit CharacterOffered(characterIndex, offerCostForDay, offreDayCount, toAddress);
+        emit RentCharacterOffered(characterIndex, offerCostForDay, offreDayCount, toAddress);
     }
     /*
         Снятие арендного предложения владельцем
@@ -162,7 +199,7 @@ contract CKCharacterMarketPlace is Owned {
         // пользователь владелец отряда
         if(!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
         characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, 0, 0, 0x0, false);
-        emit WithdrawOfferForCharacter(characterIndex);
+        emit RentWithdrawOfferForCharacter(characterIndex);
     }
     /*
         Взять персонажа в аренду
@@ -173,15 +210,15 @@ contract CKCharacterMarketPlace is Owned {
         if (!offer.isForRent) return;
         if (offer.specialTenant != 0x0 && offer.specialTenant != msg.sender) return;
         if (msg.value < offer.costForDay * offer.rentDays) return;
-        if(!ckCharacter.isCharacterOwner(characterIndex, offer.characterOwner)) return;
+        if(!ckCharacter.isCharacterOwner(characterIndex, offer.owner)) return;
         // отряд не в аренде
         if(!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
-        address seller = offer.characterOwner;
+        address seller = offer.owner;
 
         if (!ckCharacter.setCharacterRent(characterIndex,  seller, msg.sender,  offer.rentDays)) return;
         withdrawOfferForCharacter(characterIndex);
         if (!ckAccount.addPendingWithdrawals.value(msg.value)(seller)) return;
-        emit CharacterRent(characterIndex, offer.costForDay, offer.rentDays, seller, msg.sender);
+        emit RentCharacter(characterIndex, offer.costForDay, offer.rentDays, seller, msg.sender);
         // Если арендатор делал предложение, удалим его и перечислим средства на счёт
         RentBid memory bid = characterRentBids[characterIndex];
         if (bid.tenant == msg.sender) {
@@ -194,8 +231,8 @@ contract CKCharacterMarketPlace is Owned {
     */
     function getRentOffer(uint characterIndex) public view returns (uint, address, uint, uint, address, bool){
         return (
-        characterOfferedForRent[characterIndex].id,
-        characterOfferedForRent[characterIndex].characterOwner,
+        characterOfferedForRent[characterIndex].index,
+        characterOfferedForRent[characterIndex].owner,
         characterOfferedForRent[characterIndex].costForDay,
         characterOfferedForRent[characterIndex].rentDays,
         characterOfferedForRent[characterIndex].specialTenant,
@@ -207,11 +244,84 @@ contract CKCharacterMarketPlace is Owned {
     */
     function getRentBid(uint characterIndex) public view returns (uint, address, uint, uint){
         return (
-        characterRentBids[characterIndex].id,
+        characterRentBids[characterIndex].index,
         characterRentBids[characterIndex].tenant,
         characterRentBids[characterIndex].costForDay,
         characterRentBids[characterIndex].rentDays
         );
+    }
+
+    /*
+        Получить предложение покупки отряда
+    */
+    function getOfferCharacter(uint characterIndex) public view returns (uint, address, uint, address, bool){
+        return (
+        characterOffers[characterIndex].index,
+        characterOffers[characterIndex].owner,
+        characterOffers[characterIndex].price,
+        characterOffers[characterIndex].specialCustomer,
+        characterOffers[characterIndex].isForSale
+        );
+    }
+    /*
+        Получить предложение продажи отряда
+    */
+    function getBidCharacter(uint characterIndex) public view returns (uint, address, uint){
+        return (
+        characterBids[characterIndex].index,
+        characterBids[characterIndex].customer,
+        characterBids[characterIndex].price
+        );
+    }
+    /*
+        Добавление предложения покупки отряда
+    */
+    function enterBidCharacter(uint characterIndex) public onlyActiveAccount payable {
+        // пользователь не владелец отряда
+        if(ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        // отряд не в аренде
+        if(!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
+        // существующее предложение
+        BidCharacter memory existBidCharacter = characterBids[characterIndex];
+        if (msg.value <= existBidCharacter.price) return;
+        // сумму предыдущего предложения запишем на счет пользователя
+        if (existBidCharacter.price > 0) {
+            ckAccount.addPendingWithdrawals.value(existBidCharacter.price)(existBidCharacter.customer);
+        }
+        // создаем новое предложение
+        characterBids[characterIndex] = BidCharacter(characterIndex, msg.sender, msg.value);
+        emit BidCharacterEntered(characterIndex, msg.value, msg.sender);
+    }
+    /*
+        Продать отряд
+    */
+    function acceptBidCharacter(uint characterIndex) public onlyActiveAccount {
+        // пользователь владелец отряда
+        if(!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        // отряд не в аренде
+        if(!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
+        //предложение
+        address seller = msg.sender;
+        BidCharacter memory existBidCharacter = characterRentBids[characterIndex];
+        if (existBidCharacter.price == 0) return;
+
+
+        characterRentBids[characterIndex] = RentBid(characterIndex, 0x0, 0, 0);
+        ckAccount.addPendingWithdrawals.value(existBidCharacter.price)(seller);
+        emit BidCharacterAccepted(characterIndex, existBidCharacter.price, existBidCharacter.customer);
+    }
+    /*
+        Снятие предложения покупки отряда
+    */
+    function withdrawBidCharacter(uint characterIndex) public onlyActiveAccount {
+        // пользователь не владелец отряда
+        if(ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        BidCharacter memory existBidCharacter = characterBids[characterIndex];
+        if (existBidCharacter.customer != msg.sender) return;
+        emit BidCharacterWithdrawn(characterIndex, existBidCharacter.price, msg.sender);
+        characterBids[characterIndex] = BidCharacter(characterIndex, 0, 0x0);
+        // вернем деньги за предложение
+        msg.sender.transfer(existBidCharacter.price);
     }
 }
 
