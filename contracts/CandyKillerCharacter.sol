@@ -53,6 +53,12 @@ contract CandyKillerCharacter is Owned {
     event IncreaseFreeExperienceCoin(address executor, uint characterIndex, uint _freeExperienceCoin);
     // прокачка скила
     event IncreaseSkillLevel(address executor, uint characterIndex, uint skillIndex, uint experienceCoins, uint freeExperienceCoins);
+    // задать аренду
+    event SetCharacterRent(address renter, uint characterIndex, uint rentDays);
+    // снять аренду
+    event OverCharacterRent(uint characterIndex);
+    // передача отряда
+    event TransferCharacter(address newOwner, uint characterIndex);
 
     function CandyKilleAccountCharacter() public {
         owner = msg.sender;
@@ -242,6 +248,7 @@ contract CandyKillerCharacter is Owned {
         characters[characterIndex].tenant = tenant;
         characters[characterIndex].rentStart = now;
         characters[characterIndex].rentDayLenght = rentDayCount;
+        emit SetCharacterRent(tenant, characterIndex, rentDayCount);
         return true;
     }
     /*
@@ -253,8 +260,25 @@ contract CandyKillerCharacter is Owned {
             characters[characterIndex].tenant = 0x0;
             characters[characterIndex].rentStart = 0;
             characters[characterIndex].rentDayLenght = 0;
-            return false;
+            emit OverCharacterRent(characterIndex);
+            return true;
         }
+        return false;
+    }
+    /*
+        Передать отряд новому хозяину
+    */
+    function transferCharacter(uint characterIndex, address characterOwner, address newCharacterOwner) public returns (bool) {
+        // только магазтн
+        if (msg.sender != characterMarketPlace) return false;
+        // characterOwner владелец отряда
+        if (!isCharacterOwner(characterIndex, characterOwner)) return false;
+        // данные валидны
+        if (newCharacterOwner == 0x0) return false;
+        // отряд не в аренде
+        if (characters[characterIndex].tenant != 0x0) return false;
+        characterIndexToAddress[characterIndex] = newCharacterOwner;
+        emit TransferCharacter(newCharacterOwner, characterIndex);
         return true;
     }
 }
