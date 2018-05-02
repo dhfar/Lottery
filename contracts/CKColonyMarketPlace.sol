@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./Owned.sol";
 
@@ -99,7 +99,7 @@ contract CKColonyMarketPlace is Owned {
     event ColonyOfferBuy(uint colonyIndex, uint price, address toAddress);
     event WithdrawOfferForColony(uint colonyIndex);
 
-    function CKColonyMarketPlace() public {
+    constructor() public {
         owner = msg.sender;
     }
 

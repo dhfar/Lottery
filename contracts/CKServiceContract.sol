@@ -1,15 +1,15 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./Owned.sol";
 
 contract CKServiceContract is Owned {
 
-    function CKServiceContract() public {
+    constructor() public {
         owner = msg.sender;
     }
 
     function convertBlockHashToUintHexArray(uint blockNumber, uint8 convertCharacterCount) public view returns (uint8[32] convertValues, bool error) {
-        return convertBlockHashToUintHexArray(block.blockhash(blockNumber), convertCharacterCount);
+        return convertBlockHashToUintHexArray(blockhash(blockNumber), convertCharacterCount);
     }
 
     function convertBlockHashToUintHexArray(bytes32 bloclHash, uint8 convertCharacterCount) public pure returns (uint8[32] convertValues, bool error) {
@@ -34,7 +34,7 @@ contract CKServiceContract is Owned {
     */
     function geMultiplicationBlochHashCharacters(uint characterCount) public view onlyOwner returns (uint, bool, string) {
         bool error = false;
-        bytes32 lastBlockHash = block.blockhash(block.number - 1);
+        bytes32 lastBlockHash = blockhash(block.number - 1);
         string memory s = bytes32ToString(lastBlockHash);
         bytes memory b = bytes(s);
         uint characterConvertCount = 0;

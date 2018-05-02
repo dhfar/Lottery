@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./Owned.sol";
 
@@ -39,7 +39,7 @@ contract CandyKillerAccount is Owned {
     // списание игровой валюты
     event WithdrawalPixelWarsCoins(address executor, uint pixelCount, uint accountIndex);
 
-    function CandyKillerAccount() public {
+    constructor() public {
         owner = msg.sender;
     }
     /*
@@ -189,8 +189,8 @@ contract CandyKillerAccount is Owned {
         Начисление свободного опыта
     */
     function accrueFreeExperienceCoin(address accountOwner, uint accrueCoins) public returns (bool) {
-        if(msg.sender != candyKillerCharacter) return false;
-        if(!isCreateAndActive(accountOwner)) return false;
+        if (msg.sender != candyKillerCharacter) return false;
+        if (!isCreateAndActive(accountOwner)) return false;
         accounts[accountOwner].freeExperienceCoin += accrueCoins;
         return true;
     }
@@ -198,9 +198,9 @@ contract CandyKillerAccount is Owned {
         Списание свободного опыта
     */
     function writeOffFreeExperienceCoin(address accountOwner, uint writeOffCoins) public returns (bool) {
-        if(msg.sender != candyKillerCharacter) return false;
-        if(!isCreateAndActive(accountOwner)) return false;
-        if(writeOffCoins > accounts[accountOwner].freeExperienceCoin) return false;
+        if (msg.sender != candyKillerCharacter) return false;
+        if (!isCreateAndActive(accountOwner)) return false;
+        if (writeOffCoins > accounts[accountOwner].freeExperienceCoin) return false;
         accounts[accountOwner].freeExperienceCoin -= writeOffCoins;
         return true;
     }

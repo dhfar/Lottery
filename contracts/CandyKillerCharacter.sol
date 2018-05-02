@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./Owned.sol";
 
@@ -60,7 +60,7 @@ contract CandyKillerCharacter is Owned {
     // передача отряда
     event TransferCharacter(address newOwner, uint characterIndex);
 
-    function CandyKilleAccountCharacter() public {
+    constructor() public {
         owner = msg.sender;
         totalSupply = 10000;
         name = "CandyKillerCharacter";
@@ -93,7 +93,7 @@ contract CandyKillerCharacter is Owned {
         newCharacter.id = nextCharacterIndexToAssign;
         uint8[32] memory generateSkilsMask;
         bool error;
-        (generateSkilsMask, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 32);
+        (generateSkilsMask, error) = ckService.convertBlockHashToUintHexArray(blockhash(block.number - 1), 32);
         if (error) return 0;
         newCharacter.skilsMask = generateSkilsMask;
         newCharacter.isDeleted = false;
@@ -110,7 +110,7 @@ contract CandyKillerCharacter is Owned {
     /*
     Удаление персонажа.
     Персонаж остается без хозяина и получет статус удален.
-*/
+    */
     function deleteCharacter(uint characterIndex) public onlyActiveAccount returns (bool) {
         // Персонаж принадлежит вызвавшему функцию
         if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
