@@ -21,10 +21,14 @@ import org.web3j.tx.TransactionManager;
  * or the org.web3j.codegen.SolidityFunctionWrapperGenerator in the 
  * <a href="https://github.com/web3j/web3j/tree/master/codegen">codegen module</a> to update.
  *
- * <p>Generated with web3j version 3.3.1.
+ * <p>Generated with web3j version 3.4.0.
  */
 public class Owned extends Contract {
-    private static final String BINARY = "6060604052341561000f57600080fd5b6101bb8061001e6000396000f3006060604052600436106100565763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416638da5cb5b811461005b578063df32754b14610097578063f2fde38b146100ac575b600080fd5b341561006657600080fd5b61006e6100d8565b60405173ffffffffffffffffffffffffffffffffffffffff909116815260200160405180910390f35b34156100a257600080fd5b6100aa6100f4565b005b34156100b757600080fd5b6100aa73ffffffffffffffffffffffffffffffffffffffff6004351661012b565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b6000805473ffffffffffffffffffffffffffffffffffffffff19163373ffffffffffffffffffffffffffffffffffffffff16179055565b6000543373ffffffffffffffffffffffffffffffffffffffff90811691161461015357600080fd5b6000805473ffffffffffffffffffffffffffffffffffffffff191673ffffffffffffffffffffffffffffffffffffffff929092169190911790555600a165627a7a723058208e4cb2f29c3d689754700f38627a97491b3be7752bf47b0021d67bc23a45a6110029";
+    private static final String BINARY = "608060405234801561001057600080fd5b5060008054600160a060020a033316600160a060020a031990911617905561016a8061003d6000396000f30060806040526004361061004b5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416638da5cb5b8114610050578063f2fde38b1461008e575b600080fd5b34801561005c57600080fd5b506100656100be565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b34801561009a57600080fd5b506100bc73ffffffffffffffffffffffffffffffffffffffff600435166100da565b005b60005473ffffffffffffffffffffffffffffffffffffffff1681565b6000543373ffffffffffffffffffffffffffffffffffffffff90811691161461010257600080fd5b6000805473ffffffffffffffffffffffffffffffffffffffff191673ffffffffffffffffffffffffffffffffffffffff929092169190911790555600a165627a7a7230582019a416df13c958bd2f2e106fc6dfa90ba2a7841bd09e9165152c955f75fa45250029";
+
+    public static final String FUNC_OWNER = "owner";
+
+    public static final String FUNC_TRANSFEROWNERSHIP = "transferOwnership";
 
     protected Owned(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, credentials, gasPrice, gasLimit);
@@ -35,23 +39,15 @@ public class Owned extends Contract {
     }
 
     public RemoteCall<String> owner() {
-        final Function function = new Function("owner", 
+        final Function function = new Function(FUNC_OWNER, 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
-    public RemoteCall<TransactionReceipt> owned() {
-        final Function function = new Function(
-                "owned", 
-                Arrays.<Type>asList(), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
     public RemoteCall<TransactionReceipt> transferOwnership(String newOwner) {
         final Function function = new Function(
-                "transferOwnership", 
+                FUNC_TRANSFEROWNERSHIP, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(newOwner)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
