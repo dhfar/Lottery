@@ -100,7 +100,7 @@ contract CandyKillerColony is Owned {
     event BuildBuilding(uint building, uint earthCellIndex, uint colonyIndex, address ownerColonyAddress);
     event DeleteBuilding(uint building, uint colonyIndex, address ownerColonyAddress);
 
-    constructor() public {
+    function CandyKillerColony() public {
         owner = msg.sender;
     }
     /*
@@ -138,7 +138,7 @@ contract CandyKillerColony is Owned {
     function createColony(string colonyName) public onlyActiveAccount {
         uint8[32] memory convertHash;
         bool error;
-        (convertHash, error) = ckService.convertBlockHashToUintHexArray(blockhash(block.number - 1), 14);
+        (convertHash, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 14);
         if (error) return;
         Colony memory newColony;
         newColony.index = nextColonyIndex;
@@ -270,7 +270,7 @@ contract CandyKillerColony is Owned {
         if (!ckAccount.isCreateAndActive(userAddress)) return;
         uint8[32] memory convertHash;
         bool error;
-        (convertHash, error) = ckService.convertBlockHashToUintHexArray(blockhash(block.number - 1), 2);
+        (convertHash, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 2);
         if (error) return;
 
         EarthCell memory newEarthCell;

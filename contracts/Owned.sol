@@ -1,10 +1,10 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.21;
 
 contract Owned {
     address public owner;
 
     //конструктор класса: при СОЗДАНИИ контракта в качестве владелльца контракта прописывается его создатель
-    constructor() public {
+    function Owned() public {
         owner = msg.sender;
     }
 

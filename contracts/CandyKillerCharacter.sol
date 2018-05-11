@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -60,7 +60,7 @@ contract CandyKillerCharacter is Owned {
     // передача отряда
     event TransferCharacter(address newOwner, uint characterIndex);
 
-    constructor() public {
+    function CandyKillerCharacter() public {
         owner = msg.sender;
         totalSupply = 10000;
         name = "CandyKillerCharacter";

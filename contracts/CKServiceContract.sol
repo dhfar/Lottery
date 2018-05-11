@@ -1,10 +1,10 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
 contract CKServiceContract is Owned {
 
-    constructor() public {
+    function CKServiceContract() public {
         owner = msg.sender;
     }
 
@@ -34,7 +34,7 @@ contract CKServiceContract is Owned {
     */
     function geMultiplicationBlochHashCharacters(uint characterCount) public view onlyOwner returns (uint, bool, string) {
         bool error = false;
-        bytes32 lastBlockHash = blockhash(block.number - 1);
+        bytes32 lastBlockHash = block.blockhash(block.number - 1);
         string memory s = bytes32ToString(lastBlockHash);
         bytes memory b = bytes(s);
         uint characterConvertCount = 0;

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.21;
 
 import "./Owned.sol";
 
@@ -15,6 +15,7 @@ contract CandyKillerAccount is Owned {
     // адреса магазинов
     address colonyMarketPlace;
     address candyKillerCharacter;
+    address characterMarketPlace;
     /*
         Описание аккаунта
     */
@@ -39,7 +40,7 @@ contract CandyKillerAccount is Owned {
     // списание игровой валюты
     event WithdrawalPixelWarsCoins(address executor, uint pixelCount, uint accountIndex);
 
-    constructor() public {
+    function CandyKillerAccount() public {
         owner = msg.sender;
     }
     /*
@@ -176,10 +177,17 @@ contract CandyKillerAccount is Owned {
         candyKillerCharacter = candyKillerCharacterAddress;
     }
     /*
+        Задать адрес контракта магазин отрядов
+    */
+    function setCharacterMarketPlace(address characterMarketPlaceAddress) public onlyOwner {
+        if (characterMarketPlaceAddress == 0x0) return;
+        characterMarketPlace = characterMarketPlaceAddress;
+    }
+    /*
         Записать средства на счет пользователя
     */
     function addPendingWithdrawals(address userAddress) public payable returns (bool){
-        if (msg.sender != colonyMarketPlace) return false;
+        if (msg.sender != colonyMarketPlace || msg.sender != characterMarketPlace) return false;
         if (msg.value == 0) return false;
         if (!isCreateAndActive(userAddress)) return false;
         pendingWithdrawals[userAddress] += msg.value;
