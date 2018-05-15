@@ -9,7 +9,7 @@ contract CKServiceContract is Owned {
     }
 
     function convertBlockHashToUintHexArray(uint blockNumber, uint8 convertCharacterCount) public view returns (uint8[32] convertValues, bool error) {
-        return convertBlockHashToUintHexArray(blockhash(blockNumber), convertCharacterCount);
+        return convertBlockHashToUintHexArray(block.blockhash(blockNumber), convertCharacterCount);
     }
 
     function convertBlockHashToUintHexArray(bytes32 bloclHash, uint8 convertCharacterCount) public pure returns (uint8[32] convertValues, bool error) {

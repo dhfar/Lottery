@@ -82,6 +82,13 @@ contract CandyKillerCharacter is Owned {
         ckService = CKServiceContract(serviceContract);
     }
     /*
+        инициализация объекта CKCharacterMarketPlace
+    */
+    function initCKCharacterMarketPlace(address characterMarketPlaceAddress) public onlyOwner {
+        if (characterMarketPlaceAddress == 0x0) return;
+        characterMarketPlace = characterMarketPlaceAddress;
+    }
+    /*
         Создание персонажа
     */
     function createCharacter(string characterName) public onlyActiveAccount returns (uint) {
@@ -93,7 +100,7 @@ contract CandyKillerCharacter is Owned {
         newCharacter.id = nextCharacterIndexToAssign;
         uint8[32] memory generateSkilsMask;
         bool error;
-        (generateSkilsMask, error) = ckService.convertBlockHashToUintHexArray(blockhash(block.number - 1), 32);
+        (generateSkilsMask, error) = ckService.convertBlockHashToUintHexArray(block.blockhash(block.number - 1), 32);
         if (error) return 0;
         newCharacter.skilsMask = generateSkilsMask;
         newCharacter.isDeleted = false;
@@ -110,6 +117,7 @@ contract CandyKillerCharacter is Owned {
     /*
     Удаление персонажа.
     Персонаж остается без хозяина и получет статус удален.
+    ToDo Проверки, что отрял не в аренде и на него нет предложений аренды/продажи от владельца
     */
     function deleteCharacter(uint characterIndex) public onlyActiveAccount returns (bool) {
         // Персонаж принадлежит вызвавшему функцию
@@ -168,11 +176,12 @@ contract CandyKillerCharacter is Owned {
     */
     function increaseExperienceCoin(uint characterIndex, uint experienceCoin) public onlyOwner returns (bool) {
         // У персонажа есть хозяин
-        if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] == msg.sender) return false;
         if (characterIndex == 0 || experienceCoin == 0) return false;
         // Увеличиваем колиство монет прокачки персонажа
         if (characters[characterIndex].tenant != 0x0) {
-            if (!ckAccount.accrueFreeExperienceCoin(characterIndexToAddress[characterIndex], experienceCoin / 2)) return false;
+            if (!ckAccount.accrueFreeExperienceCoin(characters[characterIndex].tenant, experienceCoin / 2)) return false;
+            characters[characterIndex].experienceCoin += experienceCoin / 2;
             emit IncreaseFreeExperienceCoin(msg.sender, characterIndex, experienceCoin / 2);
         } else {
             characters[characterIndex].experienceCoin += experienceCoin;
