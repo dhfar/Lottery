@@ -106,7 +106,7 @@ contract CKCharacterMarketPlace is Owned {
     /*
          Создание контракта
      */
-    constructor() public {
+    function CKCharacterMarketPlace() public {
         owner = msg.sender;
     }
     /*
@@ -384,6 +384,12 @@ contract CKCharacterMarketPlace is Owned {
             if (!ckAccount.addPendingWithdrawals.value(bid.costForDay * bid.rentDays)(msg.sender)) return;
             characterRentBids[characterIndex] = RentBid(characterIndex, 0x0, 0, 0);
         }
+    }
+    /*
+        Отряд выставлен на продажу
+    */
+    function isExistOfferCharacter(uint characterIndex) public view returns (bool) {
+        return characterOffers[characterIndex].isForSale;
     }
 }
 

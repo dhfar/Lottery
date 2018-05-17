@@ -21,6 +21,7 @@ contract CandyKillerCharacter is Owned {
     */
     CandyKillerAccount ckAccount;
     CKServiceContract ckService;
+    CKCharacterMarketPlace ckCharacterMarketPlace;
     /*
         Модификаторы
     */
@@ -87,6 +88,7 @@ contract CandyKillerCharacter is Owned {
     function initCKCharacterMarketPlace(address characterMarketPlaceAddress) public onlyOwner {
         if (characterMarketPlaceAddress == 0x0) return;
         characterMarketPlace = characterMarketPlaceAddress;
+        ckCharacterMarketPlace = CKCharacterMarketPlace(characterMarketPlaceAddress);
     }
     /*
         Создание персонажа
@@ -122,6 +124,10 @@ contract CandyKillerCharacter is Owned {
     function deleteCharacter(uint characterIndex) public onlyActiveAccount returns (bool) {
         // Персонаж принадлежит вызвавшему функцию
         if (characterIndexToAddress[characterIndex] == 0x0 || characterIndexToAddress[characterIndex] != msg.sender) return false;
+        // Персонаж не в аренде
+        if (characters[characterIndex].tenant != 0x0) return false;
+        // Персонаж не продается
+        if (ckCharacterMarketPlace.isExistOfferCharacter(characterIndex)) return false;
         // Устанавливаем персонажу флаг удален
         characters[characterIndex].isDeleted = true;
         // Удаляем првязку персонажа к владельцу
@@ -304,4 +310,8 @@ contract CandyKillerAccount {
 
 contract CKServiceContract {
     function convertBlockHashToUintHexArray(bytes32 bloclHash, uint8 convertCharacterCount) public pure returns (uint8[32] convertValues, bool error);
+}
+
+contract CKCharacterMarketPlace {
+    function isExistOfferCharacter(uint characterIndex) public view returns (bool);
 }
