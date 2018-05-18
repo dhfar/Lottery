@@ -131,7 +131,7 @@ contract CandyKillerCharacter is Owned {
         // Устанавливаем персонажу флаг удален
         characters[characterIndex].isDeleted = true;
         // Удаляем првязку персонажа к владельцу
-        characterIndexToAddress[characterIndex] == 0x0;
+        characterIndexToAddress[characterIndex] = 0x0;
         return true;
     }
     /*
