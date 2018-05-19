@@ -303,7 +303,7 @@ contract CKCharacterMarketPlace is Owned {
         // пользователь владелец отряда
         if (!ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
         // отряд не в аренде
-        if (ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
+        if (!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
         //предложение
         address seller = msg.sender;
         BidCharacter memory existBidCharacter = characterBids[characterIndex];
@@ -311,10 +311,11 @@ contract CKCharacterMarketPlace is Owned {
         // у отряда не должно быть предложения о сдаче в аренду
         if (characterOfferedForRent[characterIndex].owner == msg.sender) return;
         // указывается адрес арендатора
-        if (!ckCharacter.transferCharacter(characterIndex, msg.sender, existBidCharacter.customer)) return;
-        characterBids[characterIndex] = BidCharacter(characterIndex, 0x0, 0, 0);
-        ckAccount.addPendingWithdrawals.value(existBidCharacter.price)(seller);
-        emit BidCharacterAccepted(characterIndex, existBidCharacter.price, existBidCharacter.customer);
+        if (ckCharacter.transferCharacter(characterIndex, msg.sender, existBidCharacter.customer)) {
+            characterBids[characterIndex] = BidCharacter(characterIndex, 0x0, 0);
+            ckAccount.addPendingWithdrawals.value(existBidCharacter.price)(seller);
+            emit BidCharacterAccepted(characterIndex, existBidCharacter.price, existBidCharacter.customer);
+        }
     }
     /*
         Снятие предложения покупки отряда
@@ -370,12 +371,13 @@ contract CKCharacterMarketPlace is Owned {
         if (msg.value < offer.price) return;
         if (!ckCharacter.isCharacterOwner(characterIndex, offer.owner)) return;
         // отряд не в аренде
-        if (ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
+        if (!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
         address seller = offer.owner;
         // если владелец делал предложение об аренде то не продаем
-        if (characterOfferedForRent[characterIndex].isForRent)
-            if (!ckCharacter.transferCharacter(characterIndex, seller, msg.sender)) return;
-        withdrawOfferForCharacter(characterIndex);
+        if (characterOfferedForRent[characterIndex].isForRent) return;
+        if (!ckCharacter.transferCharacter(characterIndex, seller, msg.sender)) return;
+        // удалим предложение на покупку
+        characterOffers[characterIndex] = OfferCharacter(characterIndex, msg.sender, 0, 0x0, false);
         if (!ckAccount.addPendingWithdrawals.value(msg.value)(seller)) return;
         emit BuyCharacter(characterIndex, offer.price, seller, msg.sender);
         // Если арендатор делал предложение, удалим его и перечислим средства на счёт
