@@ -129,19 +129,22 @@ contract CKCharacterMarketPlace is Owned {
     function enterRentBidForCharacter(uint characterIndex, uint rentDayCount) public onlyActiveAccount payable {
         // пользователь не владелец отряда
         if (ckCharacter.isCharacterOwner(characterIndex, msg.sender)) return;
+        // если ничего не прислали
+        if(msg.value <= 0) return;
+        if(rentDayCount <= 0) return;
         // отряд не в аренде
         if (!ckCharacter.isCharacterAvailableForRent(characterIndex)) return;
         // существующее предложение
         RentBid memory existRentBid = characterRentBids[characterIndex];
-        uint newRentBidCost = existRentBid.costForDay * existRentBid.rentDays;
-        if (msg.value <= newRentBidCost) return;
+        uint oldRentBidCost = existRentBid.costForDay * existRentBid.rentDays;
+        if (msg.value <= oldRentBidCost) return;
         // сумму предыдущего предложения запишем на счет пользователя
-        if (newRentBidCost > 0) {
-            ckAccount.addPendingWithdrawals.value(newRentBidCost)(existRentBid.tenant);
+        if (oldRentBidCost > 0) {
+            ckAccount.addPendingWithdrawals.value(oldRentBidCost)(existRentBid.tenant);
         }
         // создаем новое предложение
-        characterRentBids[characterIndex] = RentBid(characterIndex, msg.sender, newRentBidCost / rentDayCount, rentDayCount);
-        emit RentCharacterBidEntered(characterIndex, newRentBidCost, rentDayCount, msg.sender);
+        characterRentBids[characterIndex] = RentBid(characterIndex, msg.sender, msg.value / rentDayCount, rentDayCount);
+        emit RentCharacterBidEntered(characterIndex, msg.value / rentDayCount, rentDayCount, msg.sender);
     }
     /*
         Согласится на предложение аренлы отряда
@@ -220,7 +223,7 @@ contract CKCharacterMarketPlace is Owned {
         address seller = offer.owner;
 
         if (!ckCharacter.setCharacterRent(characterIndex, seller, msg.sender, offer.rentDays)) return;
-        withdrawOfferForRentCharacter(characterIndex);
+        characterOfferedForRent[characterIndex] = RentOffer(characterIndex, msg.sender, 0, 0, 0x0, false);
         if (!ckAccount.addPendingWithdrawals.value(msg.value)(seller)) return;
         emit RentCharacter(characterIndex, offer.costForDay, offer.rentDays, seller, msg.sender);
         // Если арендатор делал предложение, удалим его и перечислим средства на счёт
