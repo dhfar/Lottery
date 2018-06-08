@@ -3,7 +3,7 @@ SET filePath=%cd%
 ECHO Clear old data
 DEL /s /q "%filePath%\candykiller\"
 ECHO Compilation contracts
-CALL solcjs ./contracts/CKServiceContract.sol ./contracts/CandyKillerColony.sol ./contracts/CandyKillerCharacter.sol ./contracts/CandyKillerAccount.sol ./contracts/CKCharacterMarketPlace.sol ./contracts/Owned.sol --bin --abi --optimize -o ./candykiller/
+CALL solcjs ./contracts/CKServiceContract.sol ./contracts/CandyKillerColony.sol ./contracts/CandyKillerCharacter.sol ./contracts/CandyKillerAccount.sol ./contracts/CKCharacterMarketPlace.sol ./contracts/CKCharacterItem.sol ./contracts/CKCharacterItemMarketPlace.sol ./contracts/Owned.sol --bin --abi --optimize -o ./candykiller/
 ECHO Rename binary file
 FOR /f %%F IN ('DIR /b %filePath%\candykiller\') do (
 	ECHO %%F | findstr __contracts_Owned_sol_Owned.abi > NUL
@@ -54,6 +54,24 @@ FOR /f %%F IN ('DIR /b %filePath%\candykiller\') do (
     IF NOT ERRORLEVEL 1 (
     	REN  %filePath%\candykiller\%%F "CKCharacterMarketPlace.bin"
     )
+
+    ECHO %%F | findstr __contracts_CKCharacterItem_sol_CKCharacterItem.abi > NUL
+    IF NOT ERRORLEVEL 1 (
+        REN  %filePath%\candykiller\%%F "CKCharacterItem.abi"
+    )
+    ECHO %%F | findstr __contracts_CKCharacterItem_sol_CKCharacterItem.bin > NUL
+    IF NOT ERRORLEVEL 1 (
+        REN  %filePath%\candykiller\%%F "CKCharacterItem.bin"
+    )
+
+    ECHO %%F | findstr __contracts_CKCharacterItemMarketPlace_sol_CKCharacterItemMarketPlace.abi > NUL
+    IF NOT ERRORLEVEL 1 (
+        REN  %filePath%\candykiller\%%F "CKCharacterItemMarketPlace.abi"
+    )
+    ECHO %%F | findstr __contracts_CKCharacterItemMarketPlace_sol_CKCharacterItemMarketPlace.bin > NUL
+    IF NOT ERRORLEVEL 1 (
+         REN  %filePath%\candykiller\%%F "CKCharacterItemMarketPlace.bin"
+    )
 )
 ECHO Create Java files
 CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CandyKillerAccount.bin %filePath%\candykiller\CandyKillerAccount.abi -o . -p org.dhfar
@@ -61,5 +79,7 @@ CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CandyKil
 CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CandyKillerColony.bin %filePath%\candykiller\CandyKillerColony.abi -o . -p org.dhfar
 CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CKServiceContract.bin %filePath%\candykiller\CKServiceContract.abi -o . -p org.dhfar
 CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CKCharacterMarketPlace.bin %filePath%\candykiller\CKCharacterMarketPlace.abi -o . -p org.dhfar
+CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CKCharacterItem.bin %filePath%\candykiller\CKCharacterItem.abi -o . -p org.dhfar
+CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\CKCharacterItemMarketPlace.bin %filePath%\candykiller\CKCharacterItemMarketPlace.abi -o . -p org.dhfar
 CALL %filePath%\java\bin\web3j solidity generate %filePath%\candykiller\Owned.bin %filePath%\candykiller\Owned.abi -o . -p org.dhfar
 PAUSE

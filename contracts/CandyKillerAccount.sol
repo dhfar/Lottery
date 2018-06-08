@@ -17,6 +17,7 @@ contract CandyKillerAccount is Owned {
     address candyKillerCharacter;
     address characterMarketPlace;
     address candyKillerCharacterItem;
+    address characterItemMarketPlace;
     /*
         Описание аккаунта
     */
@@ -189,10 +190,17 @@ contract CandyKillerAccount is Owned {
         candyKillerCharacterItem = characterItemAddress;
     }
     /*
+        Задать адрес контракта магазин предметов
+    */
+    function setCharacterItemMarketPlace(address characterItemMarketPlaceAddress) public onlyOwner {
+        if (characterItemMarketPlaceAddress == 0x0) return;
+        characterItemMarketPlace = characterItemMarketPlaceAddress;
+    }
+    /*
         Записать средства на счет пользователя
     */
     function addPendingWithdrawals(address userAddress) public payable returns (bool){
-        if (msg.sender != colonyMarketPlace && msg.sender != characterMarketPlace) return false;
+        if (msg.sender != colonyMarketPlace && msg.sender != characterMarketPlace && msg.sender != characterItemMarketPlace) return false;
         if (msg.value == 0) return false;
         if (!isCreateAndActive(userAddress)) return false;
         pendingWithdrawals[userAddress] += msg.value;
