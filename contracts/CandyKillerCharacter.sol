@@ -272,6 +272,7 @@ contract CandyKillerCharacter is Owned {
     function overCharacterRent(uint characterIndex) public returns (bool) {
         if (characters[characterIndex].tenant == 0x0 && characters[characterIndex].rentStart == 0 && characters[characterIndex].rentDayLenght == 0) return true;
         if (now >= characters[characterIndex].rentStart + (characters[characterIndex].rentDayLenght * 1 days)) {
+//        if (now >= characters[characterIndex].rentStart + (characters[characterIndex].rentDayLenght)) {
             characters[characterIndex].tenant = 0x0;
             characters[characterIndex].rentStart = 0;
             characters[characterIndex].rentDayLenght = 0;

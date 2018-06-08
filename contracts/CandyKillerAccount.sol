@@ -16,13 +16,12 @@ contract CandyKillerAccount is Owned {
     address colonyMarketPlace;
     address candyKillerCharacter;
     address characterMarketPlace;
+    address candyKillerCharacterItem;
     /*
         Описание аккаунта
     */
     struct Account {
         uint index; // идентификатор
-        string email; // почта
-        bytes32 password; // хэшпароля
         bool isActivate; // активен/ неактивен
         uint pixelWarsCoin; // игровая валюта
         bool isCreated; //  создан
@@ -46,12 +45,10 @@ contract CandyKillerAccount is Owned {
     /*
         Создание аккаунта
     */
-    function createAccount(string userEmail, string userPassword) public returns (uint) {
+    function createAccount() public returns (uint) {
         if (accounts[msg.sender].isCreated) return 0;
         Account memory newAccount;
         newAccount.index = nextAccountIndex;
-        newAccount.email = userEmail;
-        newAccount.password = sha256(userPassword);
         newAccount.isActivate = true;
         newAccount.pixelWarsCoin = 0;
         newAccount.isCreated = true;
@@ -74,17 +71,18 @@ contract CandyKillerAccount is Owned {
         indexAccount - идентификатор учетной записи
         string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, int - свободный опыт
     */
-    function getAccountInfoByIndex(uint indexAccount) public view returns (uint, string, bool, uint, bool, address, uint) {
+    function getAccountInfoByIndex(uint indexAccount) public view returns (uint, bool, uint, bool, address, uint, uint) {
         if (msg.sender == owner || msg.sender == indexOfAccounts[indexAccount]) {
-            Account memory userAccount = accounts[indexOfAccounts[indexAccount]];
+            address accountUserAddress = indexOfAccounts[indexAccount];
+            Account memory userAccount = accounts[accountUserAddress];
             return (
             userAccount.index,
-            userAccount.email,
             userAccount.isActivate,
             userAccount.pixelWarsCoin,
             userAccount.isCreated,
-            indexOfAccounts[indexAccount],
-            userAccount.freeExperienceCoin
+            accountUserAddress,
+            userAccount.freeExperienceCoin,
+            pendingWithdrawals[accountUserAddress]
             );
         }
     }
@@ -92,7 +90,7 @@ contract CandyKillerAccount is Owned {
         Получить информацию об учетной записи по адресу вызвавшего функцию
         string - email, bool - активен/ неактивен, uint - игровая валюта, bool - создан, address - владелец, int - свободный опыт
     */
-    function getAccountInfo() public view returns (uint, string, bool, uint, bool, address, uint) {
+    function getAccountInfo() public view returns (uint, bool, uint, bool, address, uint, uint) {
         return getAccountInfoByIndex(accounts[msg.sender].index);
     }
     /*
@@ -184,10 +182,17 @@ contract CandyKillerAccount is Owned {
         characterMarketPlace = characterMarketPlaceAddress;
     }
     /*
+        Задать адрес контракта предметов
+    */
+    function setCharacterItem(address characterItemAddress) public onlyOwner {
+        if (characterItemAddress == 0x0) return;
+        candyKillerCharacterItem = characterItemAddress;
+    }
+    /*
         Записать средства на счет пользователя
     */
     function addPendingWithdrawals(address userAddress) public payable returns (bool){
-        if (msg.sender != colonyMarketPlace || msg.sender != characterMarketPlace) return false;
+        if (msg.sender != colonyMarketPlace && msg.sender != characterMarketPlace) return false;
         if (msg.value == 0) return false;
         if (!isCreateAndActive(userAddress)) return false;
         pendingWithdrawals[userAddress] += msg.value;
@@ -206,7 +211,7 @@ contract CandyKillerAccount is Owned {
         Списание свободного опыта
     */
     function writeOffFreeExperienceCoin(address accountOwner, uint writeOffCoins) public returns (bool) {
-        if (msg.sender != candyKillerCharacter) return false;
+        if (msg.sender != candyKillerCharacter && msg.sender != candyKillerCharacterItem) return false;
         if (!isCreateAndActive(accountOwner)) return false;
         if (writeOffCoins > accounts[accountOwner].freeExperienceCoin) return false;
         accounts[accountOwner].freeExperienceCoin -= writeOffCoins;
