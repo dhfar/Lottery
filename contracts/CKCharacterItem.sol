@@ -45,7 +45,7 @@ contract CKCharacterItem is Owned {
     /*
         Конструктор контракта
     */
-    function CKCharacterItem(){
+    function CKCharacterItem() public{
         owner = msg.sender;
     }
     /*
